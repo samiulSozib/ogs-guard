@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { IncidentList } from "@/components/incidents/incident-list"
 import Link from "next/link"
+import { BottomNav } from "@/components/bottom-nav"
+import { bottomNavItems } from "@/components/bottom-nav-icon"
 
 // app/incidents/page.tsx
 const sampleIncidents = [
@@ -92,6 +94,7 @@ export default function ReportsPage() {
                         <IncidentList incidents={sampleIncidents} />
                     </div>
                 </main>
+                <BottomNav items={bottomNavItems} />
             </SidebarInset>
         </SidebarProvider>
     )

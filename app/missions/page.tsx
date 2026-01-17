@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { MissionList } from "@/components/missions/mission-list"
 import Link from "next/link"
+import { BottomNav } from "@/components/bottom-nav"
+import { bottomNavItems } from "@/components/bottom-nav-icon"
 
 // app/missions/page.tsx
 const sampleMissions = [
@@ -87,6 +89,7 @@ export default function ReportsPage() {
                         <MissionList missions={sampleMissions} />
                     </div>
                 </main>
+                <BottomNav items={bottomNavItems} />
             </SidebarInset>
         </SidebarProvider>
     )

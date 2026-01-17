@@ -46,7 +46,7 @@ export function HeaderCard() {
           </p>
         </div>
 
-        <Button className="shrink-0 bg-green-600 px-4 py-2 text-xs hover:bg-green-700 sm:text-sm">
+        <Button className="shrink-0 bg-[#FFC107] px-4 py-2 text-xs hover:bg-green-700 sm:text-sm">
           Send Report
         </Button>
       </div>

@@ -6,6 +6,8 @@ import { HeaderCard } from "@/components/reports/header-card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { AddReport } from "@/components/reports/add-report"
+import { BottomNav } from "@/components/bottom-nav"
+import { bottomNavItems } from "@/components/bottom-nav-icon"
 
 const sampleReports = [
   {
@@ -65,6 +67,7 @@ export default function ReportsPage() {
             <ReportList reports={sampleReports} />
           </div>
         </main>
+        <BottomNav items={bottomNavItems} />
       </SidebarInset>
     </SidebarProvider>
   )

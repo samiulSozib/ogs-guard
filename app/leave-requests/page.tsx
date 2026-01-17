@@ -7,6 +7,8 @@ import { Plus } from "lucide-react"
 import { HeaderCard } from "@/components/leave-request/header-card"
 import { LeaveList } from "@/components/leave-request/leave-list"
 import Link from "next/link"
+import { BottomNav } from "@/components/bottom-nav"
+import { bottomNavItems } from "@/components/bottom-nav-icon"
 
 const sampleLeaves = [
   {
@@ -73,6 +75,7 @@ export default function LeavesPage() {
             <LeaveList leaves={sampleLeaves} />
           </div>
         </main>
+        <BottomNav items={bottomNavItems} />
       </SidebarInset>
     </SidebarProvider>
   )

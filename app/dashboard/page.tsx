@@ -1,6 +1,9 @@
+// app/dashboard/page.tsx
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { BottomNav } from "@/components/bottom-nav"
+import { bottomNavItems } from "@/components/bottom-nav-icon"
 
 import { HeaderCard } from "@/components/dashboard/header-card"
 import { ShiftControl } from "@/components/dashboard/shift-control"
@@ -17,7 +20,7 @@ export default function DashboardPage() {
         } as React.CSSProperties
       }
     >
-      {/* Sidebar (WEB ONLY) */}
+      {/* Sidebar (Desktop ONLY) */}
       <AppSidebar
         variant="inset"
         collapsible="icon"
@@ -28,8 +31,8 @@ export default function DashboardPage() {
         {/* App Header (ALL VIEWS) */}
         <SiteHeader />
 
-        {/* Dashboard Content */}
-        <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        {/* Dashboard Content - Add bottom padding for mobile navigation */}
+        <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-24 pt-4 sm:px-6 lg:pb-6 lg:px-8">
           <HeaderCard />
 
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -42,15 +45,18 @@ export default function DashboardPage() {
               <ActiveMission />
             </div>
 
-            {/* Tasks Sidebar (WEB) */}
+            {/* Tasks Sidebar (Desktop) */}
             <aside className="space-y-4">
               <h2 className="text-sm font-semibold uppercase text-muted-foreground">
-                Today’s Tasks
+                Today Tasks
               </h2>
               <TaskCard />
             </aside>
           </section>
         </main>
+
+        {/* Bottom Navigation (Mobile ONLY) */}
+        <BottomNav items={bottomNavItems} />
       </SidebarInset>
     </SidebarProvider>
   )
