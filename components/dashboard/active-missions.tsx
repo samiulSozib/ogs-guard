@@ -1,16 +1,59 @@
-export function ActiveMission() {
-  return (
-    <div className="rounded-xl bg-gradient-to-r from-[#3a000a] to-[#6b0015] p-4 text-white flex items-center justify-between">
-      <div>
-        <p className="text-sm opacity-80">Site Name</p>
-        <p className="font-semibold">Active</p>
-        <p className="text-xs opacity-80">
-          Shift: 08:00 AM – 04:00 PM
-        </p>
-      </div>
+// components/dashboard/active-mission.tsx
+import { DashboardAssignment } from "@/app/types/dashboard"
+import { MapPin, Clock, Calendar } from "lucide-react"
 
-      <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white">
-        <span className="text-sm font-semibold">60%</span>
+interface ActiveMissionProps {
+  assignment: DashboardAssignment
+}
+
+export function ActiveMission({ assignment }: ActiveMissionProps) {
+  const startTime = new Date(assignment.duty.start_datetime).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+  const endTime = new Date(assignment.duty.end_datetime).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+
+  return (
+    <div className="rounded-xl bg-gradient-to-r from-[#3a000a] to-[#6b0015] p-6 text-white">
+      <div className="flex items-start justify-between">
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm opacity-80">Active Mission</p>
+            <p className="text-xl font-semibold">{assignment.site.name}</p>
+            <p className="text-sm opacity-80">{assignment.site.address}</p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4" />
+              <span>Shift: {startTime} – {endTime}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4" />
+              <span>Duration: {assignment.shift_duration_hours} hours</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 pt-2">
+            <div className="flex items-center gap-2">
+              <div className="text-sm opacity-80">Progress</div>
+              <div className="text-lg font-bold">{assignment.progress_percentage}%</div>
+            </div>
+            <div className="h-2 w-32 overflow-hidden rounded-full bg-white/20">
+              <div 
+                className="h-full bg-white"
+                style={{ width: `${assignment.progress_percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white">
+          <span className="text-xl font-bold">{assignment.progress_percentage}%</span>
+        </div>
       </div>
     </div>
   )

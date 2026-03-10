@@ -1,3 +1,4 @@
+// components/dashboard/action-button.tsx
 import { LucideIcon } from "lucide-react"
 import clsx from "clsx"
 
@@ -7,14 +8,16 @@ type ActiveColor = "green" | "yellow" | "maroon"
 export function ActionButton({
   icon: Icon,
   label,
-  active,
+  active = false,
+  disabled = false,
   size = "small",
-  activeColor,
+  activeColor = "green",
   onClick,
 }: {
   icon: LucideIcon
   label: string
   active?: boolean
+  disabled?: boolean
   size?: Size
   activeColor?: ActiveColor
   onClick?: () => void
@@ -29,14 +32,16 @@ export function ActionButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={clsx(
         "flex flex-col items-center justify-center rounded-2xl text-center transition-all duration-200",
         size === "large" && "p-6",
         size === "medium" && "p-5",
         size === "small" && "p-4",
-        active
-          ? clsx("scale-110 shadow-lg", activeColor && activeStyles[activeColor])
-          : "bg-muted text-muted-foreground hover:bg-muted/80"
+        active && !disabled
+          ? clsx("scale-110 shadow-lg", activeStyles[activeColor])
+          : "bg-muted text-muted-foreground hover:bg-muted/80",
+        disabled && "cursor-not-allowed opacity-50"
       )}
     >
       <Icon

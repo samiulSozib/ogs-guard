@@ -1,3 +1,4 @@
+// components/dashboard/shift-control.tsx
 "use client"
 
 import { useState } from "react"
@@ -10,49 +11,141 @@ import {
   Calendar,
 } from "lucide-react"
 import { ActionButton } from "./action-button"
+import { DashboardShiftStatus } from "@/app/types/dashboard"
+import SweetAlertService from "@/lib/sweetAlert"
 
-type PrimaryAction = "clock-in" | "break" | "clock-out" | null
+interface ShiftControlProps {
+  shiftStatus: DashboardShiftStatus
+  guardId: number
+}
 
-export function ShiftControl() {
-  const [activeAction, setActiveAction] = useState<PrimaryAction>(null)
+export function ShiftControl({ shiftStatus, guardId }: ShiftControlProps) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleClockIn = async () => {
+    setIsLoading(true)
+    // You'll implement the API call here
+    SweetAlertService.info("Clock In", "Feature coming soon")
+    setIsLoading(false)
+  }
+
+  const handleBreak = async () => {
+    if (!shiftStatus.can_start_break && !shiftStatus.can_end_break) {
+      SweetAlertService.warning("Not Available", "Break action not available at this time")
+      return
+    }
+
+    setIsLoading(true)
+    if (shiftStatus.can_start_break) {
+      SweetAlertService.info("Start Break", "Feature coming soon")
+    } else if (shiftStatus.can_end_break) {
+      SweetAlertService.info("End Break", "Feature coming soon")
+    }
+    setIsLoading(false)
+  }
+
+  const handleClockOut = async () => {
+    if (!shiftStatus.can_check_out) {
+      SweetAlertService.warning("Not Available", "Cannot clock out at this time")
+      return
+    }
+
+    setIsLoading(true)
+    SweetAlertService.info("Clock Out", "Feature coming soon")
+    setIsLoading(false)
+  }
+
+  const handleIncident = () => {
+    window.location.href = "/incidents"
+  }
+
+  const handleMissions = () => {
+    window.location.href = "/missions"
+  }
+
+  const handleLeave = () => {
+    window.location.href = "/leave-requests"
+  }
 
   return (
     <div>
       <h2 className="mb-3 font-semibold">Shift Control</h2>
 
+      {/* Shift Status Banner */}
+      <div className="mb-4 rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Current Shift Status:</span>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            shiftStatus.shift_status === 'checked_in' ? 'bg-green-100 text-green-600' :
+            shiftStatus.shift_status === 'on_break' ? 'bg-yellow-100 text-yellow-600' :
+            shiftStatus.shift_status === 'checked_out' ? 'bg-gray-100 text-gray-600' :
+            'bg-blue-100 text-blue-600'
+          }`}>
+            {shiftStatus.shift_status_label}
+          </span>
+        </div>
+        {shiftStatus.check_in_time && (
+          <div className="mt-2 text-xs text-gray-500">
+            Checked in at: {new Date(shiftStatus.check_in_time).toLocaleTimeString()}
+          </div>
+        )}
+        {shiftStatus.total_break_minutes > 0 && (
+          <div className="text-xs text-gray-500">
+            Total break time: {shiftStatus.total_break_minutes} minutes
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-        {/* Selectable Primary Actions */}
+        {/* Clock In Button */}
         <ActionButton
           icon={Power}
           label="Clock In"
           size="large"
-          active={activeAction === "clock-in"}
+          active={shiftStatus.can_check_in}
           activeColor="green"
-          onClick={() => setActiveAction("clock-in")}
+          disabled={!shiftStatus.can_check_in || isLoading}
+          onClick={handleClockIn}
         />
 
+        {/* Break Button */}
         <ActionButton
           icon={Coffee}
-          label="Break"
+          label={shiftStatus.can_start_break ? "Start Break" : shiftStatus.can_end_break ? "End Break" : "Break"}
           size="medium"
-          active={activeAction === "break"}
+          active={shiftStatus.can_start_break || shiftStatus.can_end_break}
           activeColor="yellow"
-          onClick={() => setActiveAction("break")}
+          disabled={(!shiftStatus.can_start_break && !shiftStatus.can_end_break) || isLoading}
+          onClick={handleBreak}
         />
 
+        {/* Clock Out Button */}
         <ActionButton
           icon={Clock}
           label="Clock Out"
           size="medium"
-          active={activeAction === "clock-out"}
+          active={shiftStatus.can_check_out}
           activeColor="maroon"
-          onClick={() => setActiveAction("clock-out")}
+          disabled={!shiftStatus.can_check_out || isLoading}
+          onClick={handleClockOut}
         />
 
-        {/* Non-selectable Secondary Actions */}
-        <ActionButton icon={AlertCircle} label="Incident" />
-        <ActionButton icon={Target} label="Missions" />
-        <ActionButton icon={Calendar} label="Leave" />
+        {/* Secondary Actions */}
+        <ActionButton 
+          icon={AlertCircle} 
+          label="Incident" 
+          onClick={handleIncident}
+        />
+        <ActionButton 
+          icon={Target} 
+          label="Missions" 
+          onClick={handleMissions}
+        />
+        <ActionButton 
+          icon={Calendar} 
+          label="Leave" 
+          onClick={handleLeave}
+        />
       </div>
     </div>
   )
