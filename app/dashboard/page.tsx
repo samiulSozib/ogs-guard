@@ -85,10 +85,10 @@ export default function DashboardPage() {
             {/* Main Content */}
             <div className="space-y-6 lg:col-span-2">
               {/* Shift Control */}
-              {/* <ShiftControl 
+              <ShiftControl 
                 shiftStatus={shift_status}
                 guardId={guard.id}
-              /> */}
+              />
               
               {/* Active Mission */}
               {assignment && <ActiveMission assignment={assignment} />}

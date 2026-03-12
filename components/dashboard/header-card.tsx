@@ -1,7 +1,7 @@
 // components/dashboard/header-card.tsx
 import { DashboardGuard } from "@/app/types/dashboard"
-import { User, Calendar, Clock, ChevronRight } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Bell, Menu, Wifi, BatteryFull } from "lucide-react"
+import Image from "next/image"
 
 interface HeaderCardProps {
   guard: DashboardGuard
@@ -9,157 +9,83 @@ interface HeaderCardProps {
 }
 
 export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
-  const [isMobile, setIsMobile] = useState(false)
-  const [showFullDetails, setShowFullDetails] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
   const formattedTime = new Date(currentTime).toLocaleString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
   })
 
-  const joinedDate = new Date(guard.created_at).toLocaleDateString('en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-
-  // Mobile view
-  if (isMobile) {
-    return (
-      <div className="rounded-xl bg-gradient-to-r from-[#3a000a] to-[#6b0015] p-4 text-white">
-        {/* Main Header Row */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-lg font-bold">
-                  {guard.full_name.charAt(0)}
-                </span>
-              </div>
-              <div>
-                <h1 className="text-base font-semibold">Welcome back!</h1>
-                <p className="text-sm opacity-90">{guard.full_name}</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Verification Badge - Compact */}
-          <div className={`rounded-full px-2 py-1 text-xs ${
-            guard.verification_status === 'pending' 
-              ? 'bg-yellow-500/20 text-yellow-200' 
-              : 'bg-green-500/20 text-green-200'
-          }`}>
-            {guard.verification_status === 'pending' ? '⏳' : '✅'}
-          </div>
-        </div>
-
-        {/* Expandable Details Toggle */}
-        <button 
-          onClick={() => setShowFullDetails(!showFullDetails)}
-          className="mt-3 flex w-full items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-xs"
-        >
-          <span className="font-medium">View Details</span>
-          <ChevronRight className={`h-4 w-4 transition-transform ${showFullDetails ? 'rotate-90' : ''}`} />
-        </button>
-
-        {/* Collapsible Details */}
-        {showFullDetails && (
-          <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
-            {/* Guard Code */}
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1 opacity-80">
-                <User className="h-3 w-3" />
-                <span>Guard Code</span>
-              </div>
-              <span className="font-medium">{guard.guard_code}</span>
-            </div>
-
-            {/* Joined Date */}
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1 opacity-80">
-                <Calendar className="h-3 w-3" />
-                <span>Joined</span>
-              </div>
-              <span className="font-medium">{joinedDate}</span>
-            </div>
-
-            {/* Current Time */}
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1 opacity-80">
-                <Clock className="h-3 w-3" />
-                <span>Current Time</span>
-              </div>
-              <span className="font-medium">{formattedTime}</span>
-            </div>
-
-            {/* Full Verification Status */}
-            <div className="mt-2 rounded-lg bg-white/5 p-2 text-center text-xs">
-              {guard.verification_status === 'pending' 
-                ? '⏳ Your account is pending verification' 
-                : '✅ Your account is verified'}
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // Tablet/Desktop view (original)
   return (
-    <div className="rounded-xl bg-gradient-to-r from-[#3a000a] to-[#6b0015] p-6 text-white">
-      <div className="flex items-start justify-between">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
-              <span className="text-xl font-bold">
-                {guard.full_name.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Welcome back, {guard.full_name}! 👋</h1>
-            </div>
+    <div className="relative overflow-hidden rounded-b-[2.5rem] rounded-t-xl bg-gradient-to-br from-[#2a0008] to-[#6b0015] px-4 pb-5 pt-4 text-white sm:px-5 sm:pb-6">
+      {/* Decorative Wave */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.06),transparent_45%)]" />
+
+      {/* Status Bar */}
+      {/* <div className="relative z-10 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1">
+          <span>{formattedTime}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Wifi className="h-3 w-3" />
+          <BatteryFull className="h-3 w-3" />
+        </div>
+      </div> */}
+
+      {/* User Row */}
+      <div className="relative z-10 mt-5 flex items-center justify-between sm:mt-6">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Image
+              src={guard.profile_image_url || "/img/avt.png"}
+              alt={guard.full_name}
+              width={40}
+              height={40}
+              className="rounded-full border border-white/20 object-cover sm:h-11 sm:w-11"
+            />
+            {/* Online Status Indicator */}
+            {guard.is_active && (
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white" />
+            )}
           </div>
-          
-          <div className="flex flex-wrap items-center gap-4 text-sm opacity-90">
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              <span className="font-mono">{guard.guard_code}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              <span>Joined {joinedDate}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              <span>{formattedTime}</span>
-            </div>
+
+          <div>
+            <p className="text-xs font-medium sm:text-sm">Welcome back, {guard.full_name.split(' ')[0]}! 👋</p>
+            <p className="text-[10px] text-yellow-400 sm:text-xs">
+              {guard.verification_status === 'pending' 
+                ? '⏳ Account pending verification' 
+                : '✅ Verified account'}
+            </p>
+            <p className="text-[10px] text-white/60 sm:text-xs">
+              {guard.guard_code}
+            </p>
           </div>
         </div>
 
-        {/* Verification Badge - Full */}
-        <div className={`rounded-full px-4 py-2 text-sm ${
-          guard.verification_status === 'pending' 
-            ? 'bg-yellow-500/20 text-yellow-200' 
-            : 'bg-green-500/20 text-green-200'
-        }`}>
-          {guard.verification_status === 'pending' 
-            ? '⏳ Pending Verification' 
-            : '✅ Verified Account'}
+        <div className="flex gap-3">
+          <button className="relative">
+            <Bell className="h-4 w-4 opacity-90 transition-opacity hover:opacity-100 sm:h-5 sm:w-5" />
+            {/* Unread Messages Badge - You can connect this with your stats */}
+            {/* <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold">
+              {stats?.unread_messages || 0}
+            </span> */}
+          </button>
+          <button>
+            <Menu className="h-4 w-4 opacity-90 transition-opacity hover:opacity-100 sm:h-5 sm:w-5" />
+          </button>
         </div>
       </div>
+
+      {/* Quick Stats Row - Optional, you can add this if needed */}
+      {/* <div className="relative z-10 mt-4 flex items-center justify-between rounded-lg bg-white/5 p-2 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="opacity-70">Shift:</span>
+          <span className="font-medium">08:00 - 16:00</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="opacity-70">Progress:</span>
+          <span className="font-medium">60%</span>
+        </div>
+      </div> */}
     </div>
   )
 }

@@ -12,7 +12,7 @@ export function NavMain({
   items,
 }: {
   items: {
-    title: string
+    title?: string
     url: string
     icon: LucideIcon
     isActive?: boolean
