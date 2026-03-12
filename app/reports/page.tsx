@@ -67,7 +67,7 @@ export default function ReportsPage() {
             <ReportList reports={sampleReports} />
           </div>
         </main>
-        <BottomNav items={bottomNavItems} />
+        <BottomNav />
       </SidebarInset>
     </SidebarProvider>
   )

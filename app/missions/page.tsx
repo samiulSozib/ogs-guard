@@ -150,7 +150,7 @@ export default function MissionsPage() {
             </div>
           )}
         </main>
-        <BottomNav items={bottomNavItems} />
+        <BottomNav  />
       </SidebarInset>
     </SidebarProvider>
   )

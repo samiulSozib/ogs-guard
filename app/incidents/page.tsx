@@ -147,7 +147,7 @@ export default function IncidentsPage() {
             </div>
           )}
         </main>
-        <BottomNav items={bottomNavItems} />
+        <BottomNav />
       </SidebarInset>
     </SidebarProvider>
   )

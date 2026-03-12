@@ -160,7 +160,7 @@ export default function LeavesPage() {
             </div>
           )}
         </main>
-        <BottomNav items={bottomNavItems} />
+        <BottomNav/>
       </SidebarInset>
     </SidebarProvider>
   )
