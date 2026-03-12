@@ -39,7 +39,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-center h-[80vh]">
             <Loader2 className="h-8 w-8 animate-spin text-[#5F0015]" />
           </div>
-          <BottomNav items={bottomNavItems} />
+          <BottomNav />
         </SidebarInset>
       </SidebarProvider>
     )
@@ -54,7 +54,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-center h-[80vh]">
             <p className="text-red-500">Error loading dashboard: {dashboardError}</p>
           </div>
-          <BottomNav items={bottomNavItems} />
+          <BottomNav  />
         </SidebarInset>
       </SidebarProvider>
     )
@@ -110,7 +110,7 @@ export default function DashboardPage() {
             </aside>
           </section>
         </main>
-        <BottomNav items={bottomNavItems} />
+        <BottomNav />
       </SidebarInset>
     </SidebarProvider>
   )
