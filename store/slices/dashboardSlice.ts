@@ -7,6 +7,9 @@ import {
   DashboardShiftStatus,
   DashboardStats,
   DashboardTask,
+  DashboardApiResponse,
+  ShiftStatusApiResponse,
+  StatsApiResponse,
 } from "@/app/types/dashboard";
 
 /* ------------------ Initial State ------------------ */
@@ -34,6 +37,7 @@ export const fetchDashboardData = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await dashboardService.getDashboardData();
+      // Extract the body from the API response
       return response;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch dashboard data";
@@ -48,6 +52,7 @@ export const fetchShiftStatus = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await dashboardService.getShiftStatus();
+      // Extract the shift_status from the response body
       return response.shift_status;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch shift status";
@@ -62,6 +67,7 @@ export const fetchDashboardStats = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await dashboardService.getDashboardStats();
+      // Extract the stats from the response body
       return response.stats;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch dashboard stats";
@@ -87,6 +93,14 @@ const dashboardSlice = createSlice({
       state.shiftStatus = null;
       state.stats = null;
       state.tasks = [];
+    },
+    updateShiftStatus: (state, action: PayloadAction<Partial<DashboardShiftStatus>>) => {
+      if (state.shiftStatus) {
+        state.shiftStatus = { ...state.shiftStatus, ...action.payload };
+      }
+      if (state.dashboardData) {
+        state.dashboardData.shift_status = { ...state.dashboardData.shift_status, ...action.payload };
+      }
     },
   },
   extraReducers: (builder) => {
@@ -151,6 +165,7 @@ const dashboardSlice = createSlice({
 export const {
   clearDashboardErrors,
   clearDashboardData,
+  updateShiftStatus,
 } = dashboardSlice.actions;
 
 export default dashboardSlice.reducer;

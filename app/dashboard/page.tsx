@@ -6,17 +6,15 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { BottomNav } from "@/components/bottom-nav"
-import { bottomNavItems } from "@/components/bottom-nav-icon"
 import { HeaderCard } from "@/components/dashboard/header-card"
 import { ShiftControl } from "@/components/dashboard/shift-control"
-
 import { Loader2 } from "lucide-react"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
 import { fetchDashboardData } from "@/store/slices/dashboardSlice"
 import { StatsCards } from "@/components/dashboard/stats-cards"
-import { ActiveMission } from "@/components/dashboard/active-missions"
 import { TaskList } from "@/components/dashboard/task-list"
+import { ActiveMission } from "@/components/dashboard/active-missions"
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
@@ -54,13 +52,13 @@ export default function DashboardPage() {
           <div className="flex items-center justify-center h-[80vh]">
             <p className="text-red-500">Error loading dashboard: {dashboardError}</p>
           </div>
-          <BottomNav  />
+          <BottomNav />
         </SidebarInset>
       </SidebarProvider>
     )
   }
 
-  const { guard, assignment, shift_status, tasks, stats } = dashboardData
+  const { guard, current_assignment, shift_status, tasks, stats } = dashboardData
 
   return (
     <SidebarProvider
@@ -91,7 +89,7 @@ export default function DashboardPage() {
               />
               
               {/* Active Mission */}
-              {assignment && <ActiveMission assignment={assignment} />}
+              {current_assignment && <ActiveMission assignment={current_assignment} />}
             </div>
 
             {/* Tasks Sidebar */}
@@ -102,9 +100,9 @@ export default function DashboardPage() {
               <TaskList 
                 tasks={tasks}
                 stats={{
-                  total: stats.total_tasks_today,
-                  completed: stats.completed_tasks,
-                  pending: stats.pending_tasks
+                  total: tasks.length,
+                  completed: stats.tasks_completed_today,
+                  pending: tasks.length - stats.tasks_completed_today
                 }}
               />
             </aside>
