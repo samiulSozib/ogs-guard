@@ -8,7 +8,7 @@ import siteLocationReducer from './slices/siteLocationSlice'
 import dutyTimeTypesReducer from './slices/dutyTimeTypesSlice'
 import dutyReducer from './slices/dutySlice'
 import guardAssignmentReducer from './slices/guardAssignmentSlice'
-import dutyStatusReportReducer from './slices/dutyStatusReportSlice'
+import dutyAssignmentReportReducer from './slices/dutyAssignmentReportSlice'
 import dutyAttendanceReducer from './slices/dutyAttendenceSlice'
 import guardTypesReducer from './slices/guardTypeSlice'
 import expenseCategoryReducer from './slices/expenseCategorySlice'
@@ -29,7 +29,7 @@ export const store = configureStore({
     dutyTimeTypes:dutyTimeTypesReducer,
     duty:dutyReducer,
     guardAssignment:guardAssignmentReducer,
-    dutyStatusReport:dutyStatusReportReducer,
+    dutyAssignmentReport:dutyAssignmentReportReducer,
     dutyAttendance:dutyAttendanceReducer,
     guardTypes:guardTypesReducer,
     expenseCategory:expenseCategoryReducer,

@@ -86,6 +86,7 @@ export default function DashboardPage() {
               <ShiftControl 
                 shiftStatus={shift_status}
                 guardId={guard.id}
+                currentAssignmentId={current_assignment?.id}
               />
               
               {/* Active Mission */}
