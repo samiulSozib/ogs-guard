@@ -17,6 +17,7 @@ import expenseReducer from './slices/expenseSlice'
 import leaveReducer from './slices/leaveSlice'
 import incidentReducer from './slices/incidentSlice'
 import dashboardReducer from './slices/dashboardSlice'
+import guardLiveLocationReducer from './slices/guardLiveLocationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -37,7 +38,8 @@ export const store = configureStore({
     expense:expenseReducer,
     leave:leaveReducer,
     incident:incidentReducer,
-    dashboard:dashboardReducer
+    dashboard:dashboardReducer,
+    guardLiveLocation:guardLiveLocationReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
