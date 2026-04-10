@@ -15,13 +15,14 @@ import { fetchDashboardData } from "@/store/slices/dashboardSlice"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { TaskList } from "@/components/dashboard/task-list"
 import { ActiveMission } from "@/components/dashboard/active-missions"
+import { UpcomingAssignments } from "@/components/dashboard/upcommint-assignment"
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
-  const { 
-    dashboardData, 
-    isLoadingDashboard, 
-    dashboardError 
+  const {
+    dashboardData,
+    isLoadingDashboard,
+    dashboardError
   } = useAppSelector((state) => state.dashboard)
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { guard, current_assignment, shift_status, tasks, stats } = dashboardData
+  const { guard, current_assignment, shift_status, tasks, stats, upcoming_assignments } = dashboardData
 
   return (
     <SidebarProvider
@@ -83,14 +84,19 @@ export default function DashboardPage() {
             {/* Main Content */}
             <div className="space-y-6 lg:col-span-2">
               {/* Shift Control */}
-              <ShiftControl 
+              <ShiftControl
                 shiftStatus={shift_status}
                 guardId={guard.id}
                 currentAssignmentId={current_assignment?.id}
               />
-              
+
               {/* Active Mission */}
               {current_assignment && <ActiveMission assignment={current_assignment} />}
+
+
+              {dashboardData.upcoming_assignments && dashboardData.upcoming_assignments.length > 0 && (
+                <UpcomingAssignments assignments={dashboardData.upcoming_assignments} />
+              )}
             </div>
 
             {/* Tasks Sidebar */}
@@ -98,7 +104,7 @@ export default function DashboardPage() {
               <h2 className="text-sm font-semibold uppercase text-muted-foreground">
                 Today Tasks ({tasks.length})
               </h2>
-              <TaskList 
+              <TaskList
                 tasks={tasks}
                 stats={{
                   total: tasks.length,

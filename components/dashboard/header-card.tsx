@@ -6,9 +6,9 @@ import { Bell, Menu, Wifi, BatteryFull, MapPin, Power, Circle, Activity } from "
 import Image from "next/image"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
-import { 
-  startLiveTracking, 
-  stopLiveTracking, 
+import {
+  startLiveTracking,
+  stopLiveTracking,
   updateLiveLocation,
   sendHeartbeat,
   restoreTracking
@@ -26,7 +26,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
   const { locationStatus, isTracking, currentLocation, isLoading } = useAppSelector(
     (state) => state.guardLiveLocation
   )
-  
+
   const [isOnline, setIsOnline] = useState(isTracking)
   const [lastUpdate, setLastUpdate] = useState<string | null>(null)
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -44,21 +44,21 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
       if (savedState === 'true') {
         setIsOnline(true);
         await dispatch(restoreTracking()).unwrap();
-        
+
         // Restart heartbeat interval if not running
         if (!heartbeatIntervalRef.current) {
           heartbeatIntervalRef.current = setInterval(() => {
             dispatch(sendHeartbeat());
           }, 120000); // 2 minutes
         }
-        
+
         // ✅ REMOVED: No automatic location update here
         // Location should only be updated when user clicks the button
       }
     };
-    
+
     initTracking();
-    
+
     // Cleanup on unmount
     return () => {
       if (heartbeatIntervalRef.current) {
@@ -77,7 +77,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
     try {
       await dispatch(startLiveTracking()).unwrap();
       setIsOnline(true);
-      
+
       // Start background heartbeat (every 2 minutes)
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
@@ -85,7 +85,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
       heartbeatIntervalRef.current = setInterval(() => {
         dispatch(sendHeartbeat());
       }, 120000); // 2 minutes
-      
+
       SweetAlertService.success(
         'Online Mode Active',
         'Heartbeat is now being sent every 2 minutes. Use "Update Location" button to share your location.',
@@ -108,17 +108,17 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
       'Yes, go offline',
       'Cancel'
     );
-    
+
     if (result.isConfirmed) {
       try {
         await dispatch(stopLiveTracking()).unwrap();
         setIsOnline(false);
-        
+
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = null;
         }
-        
+
         SweetAlertService.success(
           'Offline Mode',
           'You are now offline. No heartbeat or location updates are being sent.',
@@ -144,7 +144,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
       );
       return;
     }
-    
+
     try {
       await dispatch(updateLiveLocation()).unwrap();
       setLastUpdate(new Date().toLocaleTimeString());
@@ -218,15 +218,24 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
               className="rounded-full border border-white/20 object-cover sm:h-11 sm:w-11"
             />
             {isOnline && (
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white" />
+              <span className="absolute bottom-0 right-0 h-3 w-3">
+                {/* Outer expanding rings */}
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full border-2 border-green-400 bg-transparent" style={{ animationDuration: '2s' }} />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full border-2 border-green-400 bg-transparent" style={{ animationDuration: '2s', animationDelay: '0.7s' }} />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full border-2 border-green-300 bg-transparent" style={{ animationDuration: '2s', animationDelay: '1.4s' }} />
+                {/* Inner pulsing glow */}
+                <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-green-400 opacity-50" />
+                {/* Core dot */}
+                <span className="relative inline-flex h-full w-full rounded-full bg-green-500 ring-2 ring-white shadow-md" />
+              </span>
             )}
           </div>
 
           <div>
             <p className="text-xs font-medium sm:text-sm">Welcome back, {guard.full_name.split(' ')[0]}! 👋</p>
             <p className="text-[10px] text-yellow-400 sm:text-xs">
-              {guard.verification_status === 'pending' 
-                ? '⏳ Account pending verification' 
+              {guard.verification_status === 'pending'
+                ? '⏳ Account pending verification'
                 : '✅ Verified account'}
             </p>
             <p className="text-[10px] text-white/60 sm:text-xs">
@@ -242,12 +251,12 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
           <div className="flex items-center gap-2">
             <MapPin className={`h-4 w-4 ${isOnline ? 'text-green-400' : 'text-gray-400'}`} />
             <span className="text-[10px] opacity-70">
-              {isOnline && currentLocation 
+              {isOnline && currentLocation
                 ? `📍 Last location: ${parseFloat(currentLocation.latitude).toFixed(4)}, ${parseFloat(currentLocation.longitude).toFixed(4)}`
                 : 'Location sharing off'}
             </span>
           </div>
-          
+
           <div className="flex gap-2">
             {!isOnline ? (
               <button
@@ -280,7 +289,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
             )}
           </div>
         </div>
-        
+
         {isOnline && (
           <div className="mt-1 text-right">
             <span className="text-[9px] text-white/40">

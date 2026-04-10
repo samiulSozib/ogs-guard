@@ -42,10 +42,10 @@ interface DeviceInfoData {
   device_id: string
 }
 
-export function ShiftControl({ 
-  shiftStatus, 
-  guardId, 
-  currentAssignmentId 
+export function ShiftControl({
+  shiftStatus,
+  guardId,
+  currentAssignmentId
 }: ShiftControlProps) {
   const dispatch = useAppDispatch()
   const { isLoading, error: shiftError } = useAppSelector((state) => state.dutyAssignmentReport)
@@ -84,17 +84,17 @@ export function ShiftControl({
     }
 
     // Get network info
-    const connection = (navigator as Navigator & { 
-      connection?: { effectiveType?: string; type?: string } 
+    const connection = (navigator as Navigator & {
+      connection?: { effectiveType?: string; type?: string }
     }).connection
-    
+
     if (connection) {
       const type = connection.effectiveType || connection.type
       let strength = "fair"
       if (type === '4g') strength = "excellent"
       else if (type === '3g') strength = "good"
       else if (type === '2g') strength = "poor"
-      
+
       setDeviceInfo(prev => ({ ...prev, network_strength: strength }))
     } else {
       setDeviceInfo(prev => ({ ...prev, network_strength: "good" }))
@@ -118,13 +118,13 @@ export function ShiftControl({
       }
 
       setIsGettingLocation(true)
-      
+
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const lat = position.coords.latitude
           const lng = position.coords.longitude
           const accuracyValue = position.coords.accuracy
-          
+
           // Get address from coordinates (reverse geocoding)
           let addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`
           try {
@@ -139,14 +139,14 @@ export function ShiftControl({
           } catch (error) {
             console.error("Reverse geocoding failed:", error)
           }
-          
+
           setLocation({
             latitude: lat,
             longitude: lng,
             accuracy: accuracyValue,
             address: addressText
           })
-          
+
           setIsGettingLocation(false)
           resolve(true)
         },
@@ -175,8 +175,8 @@ export function ShiftControl({
   // Determine available actions based on shift status
   const getAvailableActions = () => {
     const canCheckIn = shiftStatus.can_check_in && shiftStatus.next_expected_action === 'check_in'
-    const canStartBreak = shiftStatus.can_start_break && shiftStatus.next_expected_action === 'start_break'
-    const canEndBreak = shiftStatus.can_end_break && shiftStatus.next_expected_action === 'end_break'
+    const canStartBreak = shiftStatus.can_start_break && shiftStatus.next_expected_action === 'break'
+    const canEndBreak = shiftStatus.can_end_break && shiftStatus.next_expected_action === 'break'
     const canCheckOut = shiftStatus.can_check_out && shiftStatus.next_expected_action === 'check_out'
 
     return {
@@ -191,18 +191,18 @@ export function ShiftControl({
   const availableActions = getAvailableActions()
 
   const handleClockIn = async () => {
-    if (!availableActions.canCheckIn) {
-      SweetAlertService.warning("Not Available", "You cannot clock in at this time")
-      return
-    }
+    // if (!availableActions.canCheckIn) {
+    //   SweetAlertService.warning("Not Available", "You cannot clock in at this time")
+    //   return
+    // }
 
     if (!currentAssignmentId) {
-      SweetAlertService.error("Error", "No active assignment found")
+      //SweetAlertService.error("Error", "No active assignment found")
       return
     }
 
     setActionType('check_in')
-    
+
     try {
       // Get location first
       const locationSuccess = await getLocation()
@@ -216,7 +216,7 @@ export function ShiftControl({
         "Are you ready to start your shift?",
         "Yes, Clock In"
       )
-      
+
       if (!result.isConfirmed) {
         setActionType(null)
         return
@@ -239,10 +239,10 @@ export function ShiftControl({
       })).unwrap()
 
       SweetAlertService.success("Success", "You have successfully clocked in")
-      
+
       // Refresh shift status
       dispatch(fetchShiftStatus())
-      
+
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to clock in. Please try again."
       SweetAlertService.error("Error", errorMessage)
@@ -255,24 +255,24 @@ export function ShiftControl({
     const canStartBreak = availableActions.canStartBreak
     const canEndBreak = availableActions.canEndBreak
 
-    if (!canStartBreak && !canEndBreak) {
-      SweetAlertService.warning("Not Available", "Break action not available at this time")
-      return
-    }
+    // if (!canStartBreak && !canEndBreak) {
+    //   SweetAlertService.warning("Not Available", "Break action not available at this time")
+    //   return
+    // }
 
     if (!currentAssignmentId) {
-      SweetAlertService.error("Error", "No active assignment found")
+      //SweetAlertService.error("Error", "No active assignment found")
       return
     }
 
     const isStartingBreak = canStartBreak
-    const action = isStartingBreak ? 'start_break' : 'end_break'
+    const action = isStartingBreak ? 'break' : 'break'
     const title = isStartingBreak ? "Start Break" : "End Break"
     const confirmText = isStartingBreak ? "Yes, Start Break" : "Yes, End Break"
     const successMessage = isStartingBreak ? "Break started successfully" : "Break ended successfully"
 
     setActionType(action)
-    
+
     try {
       // Get location for break action
       const locationSuccess = await getLocation()
@@ -286,7 +286,7 @@ export function ShiftControl({
         isStartingBreak ? "Are you sure you want to start your break?" : "Are you ready to return from break?",
         confirmText
       )
-      
+
       if (!result.isConfirmed) {
         setActionType(null)
         return
@@ -309,10 +309,10 @@ export function ShiftControl({
       })).unwrap()
 
       SweetAlertService.success("Success", successMessage)
-      
+
       // Refresh shift status
       dispatch(fetchShiftStatus())
-      
+
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to process break action. Please try again."
       SweetAlertService.error("Error", errorMessage)
@@ -322,18 +322,18 @@ export function ShiftControl({
   }
 
   const handleClockOut = async () => {
-    if (!availableActions.canCheckOut) {
-      SweetAlertService.warning("Not Available", "You cannot clock out at this time")
-      return
-    }
+    // if (!availableActions.canCheckOut) {
+    //   SweetAlertService.warning("Not Available", "You cannot clock out at this time")
+    //   return
+    // }
 
     if (!currentAssignmentId) {
-      SweetAlertService.error("Error", "No active assignment found")
+      //SweetAlertService.error("Error", "No active assignment found")
       return
     }
 
     setActionType('check_out')
-    
+
     try {
       // Get location for clock out
       const locationSuccess = await getLocation()
@@ -347,7 +347,7 @@ export function ShiftControl({
         "Are you sure you want to clock out? This will end your shift.",
         "Yes, Clock Out"
       )
-      
+
       if (!result.isConfirmed) {
         setActionType(null)
         return
@@ -370,10 +370,10 @@ export function ShiftControl({
       })).unwrap()
 
       SweetAlertService.success("Success", "You have successfully clocked out")
-      
+
       // Refresh shift status
       dispatch(fetchShiftStatus())
-      
+
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to clock out. Please try again."
       SweetAlertService.error("Error", errorMessage)
@@ -406,7 +406,7 @@ export function ShiftControl({
 
   // Show loading state for specific button
   const isLoadingCheckIn = isLoading && actionType === 'check_in'
-  const isLoadingBreak = isLoading && (actionType === 'start_break' || actionType === 'end_break')
+  const isLoadingBreak = isLoading && (actionType === 'break' || actionType === 'break')
   const isLoadingCheckOut = isLoading && actionType === 'check_out'
 
   return (
@@ -424,53 +424,52 @@ export function ShiftControl({
       )}
 
       {/* Error Banner */}
-      {shiftError && (
+      {/* {shiftError && (
         <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
             <span>{shiftError}</span>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Shift Status Banner */}
       <div className="mb-4 rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Current Shift Status:</span>
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            shiftStatus.shift_status === 'checked_in' ? 'bg-green-100 text-green-600' :
-            shiftStatus.shift_status === 'on_break' ? 'bg-yellow-100 text-yellow-600' :
-            shiftStatus.shift_status === 'checked_out' ? 'bg-gray-100 text-gray-600' :
-            'bg-blue-100 text-blue-600'
-          }`}>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${shiftStatus.shift_status === 'checked_in' ? 'bg-green-100 text-green-600' :
+              shiftStatus.shift_status === 'on_break' ? 'bg-yellow-100 text-yellow-600' :
+                shiftStatus.shift_status === 'checked_out' ? 'bg-gray-100 text-gray-600' :
+                  'bg-blue-100 text-blue-600'
+            }`}>
             {shiftStatus.shift_status_label}
           </span>
         </div>
-        
+
         {shiftStatus.has_active_shift && (
           <div className="mt-2 text-xs text-gray-500">
             Next action: <span className="font-medium capitalize">{shiftStatus.next_expected_action?.replace('_', ' ')}</span>
           </div>
         )}
-        
+
         {shiftStatus.check_in_time && (
           <div className="mt-2 text-xs text-gray-500">
             Checked in at: {new Date(shiftStatus.check_in_time).toLocaleTimeString()}
           </div>
         )}
-        
+
         {shiftStatus.check_out_time && (
           <div className="mt-2 text-xs text-gray-500">
             Checked out at: {new Date(shiftStatus.check_out_time).toLocaleTimeString()}
           </div>
         )}
-        
+
         {shiftStatus.total_break_minutes > 0 && (
           <div className="text-xs text-gray-500">
             Total break time: {Math.floor(shiftStatus.total_break_minutes / 60)}h {shiftStatus.total_break_minutes % 60}m
           </div>
         )}
-        
+
         {shiftStatus.on_break && (
           <div className="mt-2 text-xs text-yellow-600 font-medium">
             🔴 Currently on break
@@ -494,50 +493,45 @@ export function ShiftControl({
         {/* Clock In Button */}
         <ActionButton
           icon={isLoadingCheckIn ? Loader2 : Power}
-          label={isLoadingCheckIn ? "Clocking In..." : "Clock In"}
+          label={isLoadingCheckIn ? "Checking In..." : "Check In"}
           size="large"
+          variant="checkin"   // ✅ ADD THIS
           active={availableActions.canCheckIn}
-          activeColor="green"
-          disabled={!availableActions.canCheckIn || isLoading || isGettingLocation}
           onClick={handleClockIn}
         />
 
-        {/* Break Button */}
         <ActionButton
           icon={isLoadingBreak ? Loader2 : Coffee}
           label={isLoadingBreak ? "Processing..." : getBreakButtonLabel()}
           size="medium"
+          variant="break"     // ✅ ADD THIS
           active={isBreakActive}
-          activeColor="yellow"
-          disabled={!isBreakActive || isLoading || isGettingLocation}
           onClick={handleBreak}
         />
 
-        {/* Clock Out Button */}
         <ActionButton
           icon={isLoadingCheckOut ? Loader2 : Clock}
-          label={isLoadingCheckOut ? "Clocking Out..." : "Clock Out"}
+          label={isLoadingCheckOut ? "Checking Out..." : "Check Out"}
           size="medium"
+          variant="checkout"  // ✅ ADD THIS
           active={availableActions.canCheckOut}
-          activeColor="maroon"
-          disabled={!availableActions.canCheckOut || isLoading || isGettingLocation}
           onClick={handleClockOut}
         />
 
         {/* Secondary Actions */}
-        <ActionButton 
-          icon={AlertCircle} 
-          label="Incident" 
+        <ActionButton
+          icon={AlertCircle}
+          label="Incident"
           onClick={handleIncident}
         />
-        <ActionButton 
-          icon={Target} 
-          label="Missions" 
+        <ActionButton
+          icon={Target}
+          label="Missions"
           onClick={handleMissions}
         />
-        <ActionButton 
-          icon={Calendar} 
-          label="Leave" 
+        <ActionButton
+          icon={Calendar}
+          label="Leave"
           onClick={handleLeave}
         />
       </div>
@@ -547,8 +541,8 @@ export function ShiftControl({
         <div className="mt-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
           <strong>Next expected action:</strong> {shiftStatus.next_expected_action.replace('_', ' ').toUpperCase()}
           {shiftStatus.next_expected_action === 'check_in' && " - Start your shift by clicking the Clock In button"}
-          {shiftStatus.next_expected_action === 'start_break' && " - Take a break when needed"}
-          {shiftStatus.next_expected_action === 'end_break' && " - Return from break to continue your shift"}
+          {shiftStatus.next_expected_action === 'break' && " - Take a break when needed"}
+          {shiftStatus.next_expected_action === 'break' && " - Return from break to continue your shift"}
           {shiftStatus.next_expected_action === 'check_out' && " - End your shift when complete"}
         </div>
       )}

@@ -132,6 +132,7 @@ export interface DashboardData {
   guard: DashboardGuard;
   today_assignments: DashboardAssignment[];
   current_assignment: DashboardAssignment | null;
+  upcoming_assignments:DashboardAssignment[]|[];
   shift_status: DashboardShiftStatus;
   tasks: DashboardTask[];
   stats: DashboardStats;

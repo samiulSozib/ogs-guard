@@ -1,6 +1,6 @@
 // app/types/shift.types.ts
 
-export type ShiftAction = 'check_in' | 'check_out' | 'start_break' | 'end_break';
+export type ShiftAction = 'check_in' | 'check_out' | 'break' | 'break';
 
 export interface ShiftLogActionRequest {
   guard_assignment_id: number;
