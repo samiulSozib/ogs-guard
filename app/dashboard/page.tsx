@@ -88,6 +88,7 @@ export default function DashboardPage() {
                 shiftStatus={shift_status}
                 guardId={guard.id}
                 currentAssignmentId={current_assignment?.id}
+                currentAssignmentStatus={current_assignment?.status}
               />
 
               {/* Active Mission */}

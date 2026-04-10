@@ -10,23 +10,23 @@ import {
   Target,
   Calendar,
   Loader2,
-  MapPin,
   Navigation,
   Battery,
   Wifi,
 } from "lucide-react"
 import { ActionButton } from "./action-button"
-import { DashboardShiftStatus } from "@/app/types/dashboard"
 import SweetAlertService from "@/lib/sweetAlert"
 import { logShiftAction } from "@/store/slices/dutyAssignmentReportSlice"
 import { fetchShiftStatus } from "@/store/slices/dashboardSlice"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
+import { DashboardShiftStatus } from "@/app/types/dashboard"
 
 interface ShiftControlProps {
   shiftStatus: DashboardShiftStatus
   guardId: number
-  currentAssignmentId?: number
+  currentAssignmentId?: number,
+  currentAssignmentStatus?: string
 }
 
 interface LocationData {
@@ -45,10 +45,11 @@ interface DeviceInfoData {
 export function ShiftControl({
   shiftStatus,
   guardId,
-  currentAssignmentId
+  currentAssignmentId,
+  currentAssignmentStatus
 }: ShiftControlProps) {
   const dispatch = useAppDispatch()
-  const { isLoading, error: shiftError } = useAppSelector((state) => state.dutyAssignmentReport)
+  const { isLoading } = useAppSelector((state) => state.dutyAssignmentReport)
   const [actionType, setActionType] = useState<string | null>(null)
   const [location, setLocation] = useState<LocationData | null>(null)
   const [isGettingLocation, setIsGettingLocation] = useState(false)
@@ -57,6 +58,9 @@ export function ShiftControl({
     network_strength: "unknown",
     device_id: ""
   })
+
+  // Check if assignment is assigned
+  const isAssignmentAssigned = currentAssignmentStatus === 'assigned'
 
   // Get device info on mount
   useEffect(() => {
@@ -125,7 +129,6 @@ export function ShiftControl({
           const lng = position.coords.longitude
           const accuracyValue = position.coords.accuracy
 
-          // Get address from coordinates (reverse geocoding)
           let addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`
           try {
             const response = await fetch(
@@ -172,12 +175,24 @@ export function ShiftControl({
     })
   }
 
-  // Determine available actions based on shift status
+  // Determine available actions based on shift status and assignment status
   const getAvailableActions = () => {
+    // If assignment is assigned, only check_in is available
+    if (isAssignmentAssigned) {
+      return {
+        canCheckIn: true,
+        canStartBreak: false,
+        canEndBreak: false,
+        canCheckOut: false,
+        nextAction: 'check_in'
+      }
+    }
+
+    // When NOT assigned (shift is active), check what actions are available
     const canCheckIn = shiftStatus.can_check_in && shiftStatus.next_expected_action === 'check_in'
-    const canStartBreak = shiftStatus.can_start_break && shiftStatus.next_expected_action === 'break'
-    const canEndBreak = shiftStatus.can_end_break && shiftStatus.next_expected_action === 'break'
-    const canCheckOut = shiftStatus.can_check_out && shiftStatus.next_expected_action === 'check_out'
+    const canStartBreak = shiftStatus.can_start_break === true
+    const canEndBreak = shiftStatus.can_end_break === true
+    const canCheckOut = shiftStatus.can_check_out === true
 
     return {
       canCheckIn,
@@ -190,21 +205,30 @@ export function ShiftControl({
 
   const availableActions = getAvailableActions()
 
+  // Determine which button should bounce
+  // When assignment IS assigned -> Check In button bounces
+  // When assignment IS NOT assigned -> Break AND Check Out buttons bounce
+  const shouldBounceCheckIn = isAssignmentAssigned && availableActions.canCheckIn
+  const shouldBounceBreak = !isAssignmentAssigned
+  const shouldBounceCheckOut = !isAssignmentAssigned
+
+  // For break button to be active
+  const isBreakActive = availableActions.canStartBreak || availableActions.canEndBreak
+
   const handleClockIn = async () => {
-    // if (!availableActions.canCheckIn) {
-    //   SweetAlertService.warning("Not Available", "You cannot clock in at this time")
-    //   return
-    // }
+    if (!isAssignmentAssigned) {
+      SweetAlertService.warning("Not Available", "You cannot clock in at this time")
+      return
+    }
 
     if (!currentAssignmentId) {
-      //SweetAlertService.error("Error", "No active assignment found")
+      SweetAlertService.error("Error", "No active assignment found")
       return
     }
 
     setActionType('check_in')
 
     try {
-      // Get location first
       const locationSuccess = await getLocation()
       if (!locationSuccess || !location) {
         setActionType(null)
@@ -239,8 +263,6 @@ export function ShiftControl({
       })).unwrap()
 
       SweetAlertService.success("Success", "You have successfully clocked in")
-
-      // Refresh shift status
       dispatch(fetchShiftStatus())
 
     } catch (error: unknown) {
@@ -252,21 +274,26 @@ export function ShiftControl({
   }
 
   const handleBreak = async () => {
+    if (isAssignmentAssigned) {
+      SweetAlertService.warning("Not Available", "You must clock in first before taking a break")
+      return
+    }
+
     const canStartBreak = availableActions.canStartBreak
     const canEndBreak = availableActions.canEndBreak
 
-    // if (!canStartBreak && !canEndBreak) {
-    //   SweetAlertService.warning("Not Available", "Break action not available at this time")
-    //   return
-    // }
+    if (!canStartBreak && !canEndBreak) {
+      SweetAlertService.warning("Not Available", "Break action not available at this time")
+      return
+    }
 
     if (!currentAssignmentId) {
-      //SweetAlertService.error("Error", "No active assignment found")
+      SweetAlertService.error("Error", "No active assignment found")
       return
     }
 
     const isStartingBreak = canStartBreak
-    const action = isStartingBreak ? 'break' : 'break'
+    const action = 'break'
     const title = isStartingBreak ? "Start Break" : "End Break"
     const confirmText = isStartingBreak ? "Yes, Start Break" : "Yes, End Break"
     const successMessage = isStartingBreak ? "Break started successfully" : "Break ended successfully"
@@ -274,7 +301,6 @@ export function ShiftControl({
     setActionType(action)
 
     try {
-      // Get location for break action
       const locationSuccess = await getLocation()
       if (!locationSuccess || !location) {
         setActionType(null)
@@ -309,8 +335,6 @@ export function ShiftControl({
       })).unwrap()
 
       SweetAlertService.success("Success", successMessage)
-
-      // Refresh shift status
       dispatch(fetchShiftStatus())
 
     } catch (error: unknown) {
@@ -322,20 +346,24 @@ export function ShiftControl({
   }
 
   const handleClockOut = async () => {
-    // if (!availableActions.canCheckOut) {
-    //   SweetAlertService.warning("Not Available", "You cannot clock out at this time")
-    //   return
-    // }
+    if (isAssignmentAssigned) {
+      SweetAlertService.warning("Not Available", "You must clock in first before clocking out")
+      return
+    }
+
+    if (!availableActions.canCheckOut) {
+      SweetAlertService.warning("Not Available", "You cannot clock out at this time")
+      return
+    }
 
     if (!currentAssignmentId) {
-      //SweetAlertService.error("Error", "No active assignment found")
+      SweetAlertService.error("Error", "No active assignment found")
       return
     }
 
     setActionType('check_out')
 
     try {
-      // Get location for clock out
       const locationSuccess = await getLocation()
       if (!locationSuccess || !location) {
         setActionType(null)
@@ -370,8 +398,6 @@ export function ShiftControl({
       })).unwrap()
 
       SweetAlertService.success("Success", "You have successfully clocked out")
-
-      // Refresh shift status
       dispatch(fetchShiftStatus())
 
     } catch (error: unknown) {
@@ -394,24 +420,39 @@ export function ShiftControl({
     window.location.href = "/leave-requests"
   }
 
-  // Get button labels based on next expected action
   const getBreakButtonLabel = () => {
     if (availableActions.canStartBreak) return "Start Break"
     if (availableActions.canEndBreak) return "End Break"
     return "Break"
   }
 
-  // Determine if break button should be active
-  const isBreakActive = availableActions.canStartBreak || availableActions.canEndBreak
-
-  // Show loading state for specific button
   const isLoadingCheckIn = isLoading && actionType === 'check_in'
-  const isLoadingBreak = isLoading && (actionType === 'break' || actionType === 'break')
+  const isLoadingBreak = isLoading && actionType === 'break'
   const isLoadingCheckOut = isLoading && actionType === 'check_out'
 
   return (
     <div>
       <h2 className="mb-3 font-semibold">Shift Control</h2>
+
+      {/* Assignment Status Banner */}
+      <div className="mb-4 rounded-lg border p-3 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Assignment Status:</span>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${currentAssignmentStatus === 'assigned' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+            {currentAssignmentStatus === 'assigned' ? 'Not Started' : 'In Progress'}
+          </span>
+        </div>
+        {currentAssignmentStatus === 'assigned' && (
+          <div className="mt-2 text-xs text-blue-600 animate-pulse">
+            ⚡ Click the Check In button to start your shift
+          </div>
+        )}
+        {currentAssignmentStatus !== 'assigned' && (
+          <div className="mt-2 text-xs text-green-600 animate-pulse">
+            ✅ Your shift is in progress - Use Break or Check Out buttons
+          </div>
+        )}
+      </div>
 
       {/* Location Status */}
       {isGettingLocation && (
@@ -422,16 +463,6 @@ export function ShiftControl({
           </div>
         </div>
       )}
-
-      {/* Error Banner */}
-      {/* {shiftError && (
-        <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            <span>{shiftError}</span>
-          </div>
-        </div>
-      )} */}
 
       {/* Shift Status Banner */}
       <div className="mb-4 rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
@@ -446,7 +477,7 @@ export function ShiftControl({
           </span>
         </div>
 
-        {shiftStatus.has_active_shift && (
+        {shiftStatus.has_active_shift && !isAssignmentAssigned && (
           <div className="mt-2 text-xs text-gray-500">
             Next action: <span className="font-medium capitalize">{shiftStatus.next_expected_action?.replace('_', ' ')}</span>
           </div>
@@ -489,61 +520,82 @@ export function ShiftControl({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-        {/* Clock In Button */}
-        <ActionButton
-          icon={isLoadingCheckIn ? Loader2 : Power}
-          label={isLoadingCheckIn ? "Checking In..." : "Check In"}
-          size="large"
-          variant="checkin"   // ✅ ADD THIS
-          active={availableActions.canCheckIn}
-          onClick={handleClockIn}
-        />
+      <div className="flex flex-col gap-6">
+        {/* Primary Actions Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+          {/* Clock In Button - Bounces when assignment IS assigned */}
+          <ActionButton
+            icon={isLoadingCheckIn ? Loader2 : Power}
+            label={isLoadingCheckIn ? "Checking In..." : "Check In"}
+            size="large"
+            variant="checkin"
+            active={availableActions.canCheckIn}
+            bounce={shouldBounceCheckIn}
+            isAssignmentAssigned={isAssignmentAssigned}
+            onClick={handleClockIn}
+            disabled={isLoadingCheckIn}
+          />
 
-        <ActionButton
-          icon={isLoadingBreak ? Loader2 : Coffee}
-          label={isLoadingBreak ? "Processing..." : getBreakButtonLabel()}
-          size="medium"
-          variant="break"     // ✅ ADD THIS
-          active={isBreakActive}
-          onClick={handleBreak}
-        />
+          {/* Break Button - Bounces when assignment IS NOT assigned */}
+          <ActionButton
+            icon={isLoadingBreak ? Loader2 : Coffee}
+            label={isLoadingBreak ? "Processing..." : getBreakButtonLabel()}
+            size="large"
+            variant="break"
+            active={isBreakActive}
+            bounce={shouldBounceBreak}
+            isAssignmentAssigned={isAssignmentAssigned}
+            onClick={handleBreak}
+            disabled={isLoadingBreak}
+          />
 
-        <ActionButton
-          icon={isLoadingCheckOut ? Loader2 : Clock}
-          label={isLoadingCheckOut ? "Checking Out..." : "Check Out"}
-          size="medium"
-          variant="checkout"  // ✅ ADD THIS
-          active={availableActions.canCheckOut}
-          onClick={handleClockOut}
-        />
+          {/* Clock Out Button - Bounces when assignment IS NOT assigned */}
+          <ActionButton
+            icon={isLoadingCheckOut ? Loader2 : Clock}
+            label={isLoadingCheckOut ? "Checking Out..." : "Check Out"}
+            size="large"
+            variant="checkout"
+            active={availableActions.canCheckOut}
+            bounce={shouldBounceCheckOut}
+            isAssignmentAssigned={isAssignmentAssigned}
+            onClick={handleClockOut}
+            disabled={isLoadingCheckOut}
+          />
+        </div>
 
-        {/* Secondary Actions */}
-        <ActionButton
-          icon={AlertCircle}
-          label="Incident"
-          onClick={handleIncident}
-        />
-        <ActionButton
-          icon={Target}
-          label="Missions"
-          onClick={handleMissions}
-        />
-        <ActionButton
-          icon={Calendar}
-          label="Leave"
-          onClick={handleLeave}
-        />
+        {/* Secondary Actions Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+          <ActionButton
+            icon={AlertCircle}
+            label="Incident"
+            variant="default"
+            onClick={handleIncident}
+          />
+          <ActionButton
+            icon={Target}
+            label="Missions"
+            variant="default"
+            onClick={handleMissions}
+          />
+          <ActionButton
+            icon={Calendar}
+            label="Leave"
+            variant="default"
+            onClick={handleLeave}
+          />
+        </div>
       </div>
 
-      {/* Helper text showing what action to take next */}
-      {shiftStatus.has_active_shift && shiftStatus.next_expected_action && (
-        <div className="mt-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-          <strong>Next expected action:</strong> {shiftStatus.next_expected_action.replace('_', ' ').toUpperCase()}
-          {shiftStatus.next_expected_action === 'check_in' && " - Start your shift by clicking the Clock In button"}
-          {shiftStatus.next_expected_action === 'break' && " - Take a break when needed"}
-          {shiftStatus.next_expected_action === 'break' && " - Return from break to continue your shift"}
-          {shiftStatus.next_expected_action === 'check_out' && " - End your shift when complete"}
+      {/* Helper text */}
+      {isAssignmentAssigned && (
+        <div className="mt-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 animate-pulse">
+          <strong>📋 Assignment Ready:</strong> Click the <strong className="font-bold">Check In</strong> button to start your shift
+        </div>
+      )}
+
+      {!isAssignmentAssigned && (
+        <div className="mt-4 rounded-lg bg-green-50 p-3 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-300">
+          <strong>✅ Shift In Progress:</strong> Use the <strong className="font-bold">Break</strong> button to take a break or <strong className="font-bold">Check Out</strong> button to end your shift
         </div>
       )}
     </div>
