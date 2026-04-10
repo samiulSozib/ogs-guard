@@ -61,7 +61,13 @@ export interface DashboardAssignment {
   site: DashboardSite;
   location: DashboardLocation;
   progress: DashboardProgress;
-  last_action: string | null;
+  last_action: LastAction | null;
+}
+
+export interface LastAction{
+  action:string,
+  time:string,
+  location:string
 }
 
 // Shift Status Interface

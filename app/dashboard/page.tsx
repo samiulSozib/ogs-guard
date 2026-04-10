@@ -89,6 +89,7 @@ export default function DashboardPage() {
                 guardId={guard.id}
                 currentAssignmentId={current_assignment?.id}
                 currentAssignmentStatus={current_assignment?.status}
+                lastAction={current_assignment?.last_action}
               />
 
               {/* Active Mission */}
