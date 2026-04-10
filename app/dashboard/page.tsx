@@ -77,13 +77,8 @@ export default function DashboardPage() {
           {/* Header Card with Guard Info */}
           <HeaderCard guard={guard} currentTime={dashboardData.current_time} />
 
-          {/* Stats Cards */}
-          <StatsCards stats={stats} />
 
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Main Content */}
-            <div className="space-y-6 lg:col-span-2">
-              {/* Shift Control */}
+           {/* Shift Control */}
               <ShiftControl
                 shiftStatus={shift_status}
                 guardId={guard.id}
@@ -94,6 +89,16 @@ export default function DashboardPage() {
 
               {/* Active Mission */}
               {current_assignment && <ActiveMission assignment={current_assignment} />}
+
+          {/* Stats Cards */}
+          <StatsCards stats={stats} />
+
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="space-y-6 lg:col-span-2">
+             
+
+              
 
 
               {dashboardData.upcoming_assignments && dashboardData.upcoming_assignments.length > 0 && (

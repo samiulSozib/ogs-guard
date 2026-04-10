@@ -28,7 +28,7 @@ interface ShiftControlProps {
   currentAssignmentId?: number,
   currentAssignmentStatus?: string
   lastAction?: LastAction | null
-  onActionComplete?: () => void // Callback to refresh parent data
+  onActionComplete?: () => void
 }
 
 interface LocationData {
@@ -77,7 +77,6 @@ export function ShiftControl({
   }, [])
 
   const getDeviceInfo = () => {
-    // Get battery info if available
     if ('getBattery' in navigator) {
       const batteryPromise = (navigator as Navigator & { getBattery?: () => Promise<{ level: number }> }).getBattery?.()
       if (batteryPromise) {
@@ -96,7 +95,6 @@ export function ShiftControl({
       setDeviceInfo(prev => ({ ...prev, battery_level: 85 }))
     }
 
-    // Get network info
     const connection = (navigator as Navigator & {
       connection?: { effectiveType?: string; type?: string }
     }).connection
@@ -113,7 +111,6 @@ export function ShiftControl({
       setDeviceInfo(prev => ({ ...prev, network_strength: "good" }))
     }
 
-    // Get or generate device ID
     let deviceId = localStorage.getItem('device_id')
     if (!deviceId) {
       deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -196,12 +193,12 @@ export function ShiftControl({
       }
     }
 
-    // If last_action.action is 'break', make check_in and check_out available
+    // If last_action.action is 'break', only check_in is available (must resume duty first)
     if (lastAction.action === 'break') {
       return {
         canCheckIn: true,
         canBreak: false,
-        canCheckOut: true,
+        canCheckOut: false,
         nextAction: 'check_in'
       }
     }
@@ -301,13 +298,11 @@ export function ShiftControl({
         }
       })).unwrap()
 
-      // Update local state
       updateLastAction('check_in')
       
       SweetAlertService.success("Success", "You have successfully clocked in")
       dispatch(fetchShiftStatus())
       
-      // Callback to refresh parent data
       if (onActionComplete) {
         onActionComplete()
       }
@@ -367,13 +362,11 @@ export function ShiftControl({
         }
       })).unwrap()
 
-      // Update local state
       updateLastAction('break')
       
       SweetAlertService.success("Success", "Break started successfully")
       dispatch(fetchShiftStatus())
       
-      // Callback to refresh parent data
       if (onActionComplete) {
         onActionComplete()
       }
@@ -433,13 +426,11 @@ export function ShiftControl({
         }
       })).unwrap()
 
-      // Update local state
       updateLastAction('check_out')
       
       SweetAlertService.success("Success", "You have successfully clocked out")
       dispatch(fetchShiftStatus())
       
-      // Callback to refresh parent data
       if (onActionComplete) {
         onActionComplete()
       }
@@ -468,13 +459,11 @@ export function ShiftControl({
   const isLoadingBreak = isLoading && actionType === 'break'
   const isLoadingCheckOut = isLoading && actionType === 'check_out'
 
-  // Get last action display text
   const getLastActionText = () => {
     if (!lastAction) return "No action yet"
     return `${lastAction.action.replace('_', ' ').toUpperCase()} at ${lastAction.time}`
   }
 
-  // Check if shift is completed (all actions disabled)
   const isShiftCompleted = lastAction?.action === 'check_out'
 
   return (
@@ -502,7 +491,7 @@ export function ShiftControl({
         )}
         {lastAction?.action === 'break' && (
           <div className="mt-2 text-xs text-orange-600">
-            🔄 You were on break. Click Check In to resume or Check Out to end shift
+            🔄 You are on break. Click <strong className="font-bold">Check In</strong> to resume duty
           </div>
         )}
         {lastAction?.action === 'check_in' && (
@@ -527,59 +516,9 @@ export function ShiftControl({
         </div>
       )}
 
-      {/* Shift Status Banner */}
-      <div className="mb-4 rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Current Shift Status:</span>
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${shiftStatus.shift_status === 'checked_in' ? 'bg-green-100 text-green-600' :
-              shiftStatus.shift_status === 'on_break' ? 'bg-yellow-100 text-yellow-600' :
-                shiftStatus.shift_status === 'checked_out' ? 'bg-gray-100 text-gray-600' :
-                  'bg-blue-100 text-blue-600'
-            }`}>
-            {shiftStatus.shift_status_label}
-          </span>
-        </div>
-
-        {shiftStatus.check_in_time && (
-          <div className="mt-2 text-xs text-gray-500">
-            Checked in at: {new Date(shiftStatus.check_in_time).toLocaleTimeString()}
-          </div>
-        )}
-
-        {shiftStatus.check_out_time && (
-          <div className="mt-2 text-xs text-gray-500">
-            Checked out at: {new Date(shiftStatus.check_out_time).toLocaleTimeString()}
-          </div>
-        )}
-
-        {shiftStatus.total_break_minutes > 0 && (
-          <div className="text-xs text-gray-500">
-            Total break time: {Math.floor(shiftStatus.total_break_minutes / 60)}h {shiftStatus.total_break_minutes % 60}m
-          </div>
-        )}
-
-        {shiftStatus.on_break && (
-          <div className="mt-2 text-xs text-yellow-600 font-medium">
-            🔴 Currently on break
-          </div>
-        )}
-
-        {/* Device Info */}
-        <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <Battery className="h-3 w-3" />
-            <span>{deviceInfo.battery_level}%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Wifi className="h-3 w-3" />
-            <span>{deviceInfo.network_strength}</span>
-          </div>
-        </div>
-      </div>
-
       <div className="flex flex-col gap-6">
         {/* Primary Actions Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
           {/* Clock In Button */}
           <ActionButton
             icon={isLoadingCheckIn ? Loader2 : Power}
@@ -621,7 +560,7 @@ export function ShiftControl({
         </div>
 
         {/* Secondary Actions Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
           <ActionButton
             icon={AlertCircle}
             label="Incident"
@@ -652,7 +591,7 @@ export function ShiftControl({
 
       {lastAction?.action === 'break' && (
         <div className="mt-4 rounded-lg bg-orange-50 p-3 text-xs text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
-          <strong>🔄 Break Ended:</strong> Click <strong className="font-bold">Check In</strong> to resume duty or <strong className="font-bold">Check Out</strong> to end shift
+          <strong>🔄 On Break:</strong> Click <strong className="font-bold">Check In</strong> to resume your duty
         </div>
       )}
 
