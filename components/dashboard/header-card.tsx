@@ -23,6 +23,7 @@ interface HeaderCardProps {
 
 export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
   const dispatch = useAppDispatch()
+  
   const { locationStatus, isTracking, currentLocation, isLoading } = useAppSelector(
     (state) => state.guardLiveLocation
   )

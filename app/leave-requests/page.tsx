@@ -11,7 +11,6 @@ import { HeaderCard } from "@/components/leave-request/header-card"
 import { LeaveList } from "@/components/leave-request/leave-list"
 import Link from "next/link"
 import { BottomNav } from "@/components/bottom-nav"
-import { bottomNavItems } from "@/components/bottom-nav-icon"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
 import { fetchLeaves, deleteLeave, updateLeaveStatus } from "@/store/slices/leaveSlice"
@@ -22,25 +21,23 @@ export default function LeavesPage() {
   const dispatch = useAppDispatch()
   const { leaves, isLoading, pagination } = useAppSelector((state) => state.leave)
   const { user } = useAppSelector((state) => state.auth)
-
   const [currentPage, setCurrentPage] = useState(1)
-
 
   const loadLeaves = () => {
     if (user?.id) {
       dispatch(fetchLeaves({
         page: currentPage,
         per_page: 10,
-        guard_id: user.id // Filter by current user if needed
+        guard_id: user.id
       }))
     }
   }
 
   useEffect(() => {
-    loadLeaves()
-  }, [dispatch, currentPage])
-
-
+    if (user?.id) {
+      loadLeaves()
+    }
+  }, [dispatch, currentPage, user?.id])
 
   const handleDelete = async (id: number) => {
     const result = await SweetAlertService.confirm(
@@ -54,7 +51,7 @@ export default function LeavesPage() {
       try {
         await dispatch(deleteLeave(id)).unwrap()
         SweetAlertService.success('Success!', 'Leave request deleted successfully')
-        loadLeaves() // Refresh the list
+        loadLeaves()
       } catch (error) {
         SweetAlertService.error('Error', 'Failed to delete leave request')
       }
@@ -63,14 +60,13 @@ export default function LeavesPage() {
 
   const handleCancelRequest = async (id: number) => {
     try {
-      // Use updateLeaveStatus with 'cancelled' status
       await dispatch(updateLeaveStatus({
         id,
         payload: { status: 'cancelled' }
       })).unwrap()
 
       SweetAlertService.success('Success!', 'Leave request cancelled successfully')
-      loadLeaves() // Refresh the list
+      loadLeaves()
     } catch (error) {
       SweetAlertService.error('Error', 'Failed to cancel leave request')
     }
@@ -80,23 +76,23 @@ export default function LeavesPage() {
     setCurrentPage(page)
   }
 
-  // Transform API data to match component props
+  // Transform API data to match component props with safe date handling
   const transformedLeaves = leaves.map((leave: Leave) => ({
-    id: leave.id,
-    leaveerName: leave.leave_type_text || leave.leave_type,
-    guardName: leave.guard_details?.name || leave.guard_user?.full_name || 'Unknown',
-    time: leave.created_at_formatted || new Date(leave.created_at).toLocaleString(),
-    startDate: new Date(leave.start_date).toLocaleDateString(),
-    endDate: new Date(leave.end_date).toLocaleDateString(),
-    totalDays: leave.total_days,
-    status: leave.status_text || leave.status,
-    note: leave.reason,
-    reviewNote: leave.review_note,
-    leaveType: leave.leave_type_text || leave.leave_type,
-    siteName: leave.site_details?.site_name || leave.site?.site_name || 'N/A',
-    siteAddress: leave.site_details?.address || leave.site?.address,
-    guardDetails: leave.guard_details,
-    siteDetails: leave.site_details
+    id: leave?.id,
+    leaveerName: leave?.leave_type_text || leave?.leave_type || 'N/A',
+    guardName: leave?.guard_details?.name || leave?.guard_user?.full_name || 'Unknown',
+    time: leave?.created_at_formatted || (leave?.created_at ? new Date(leave?.created_at).toLocaleString() : 'N/A'),
+    startDate: leave?.start_date ? new Date(leave?.start_date).toLocaleDateString() : 'N/A',
+    endDate: leave?.end_date ? new Date(leave?.end_date).toLocaleDateString() : 'N/A',
+    totalDays: leave?.total_days,
+    status: leave?.status_text || leave?.status || 'Pending',
+    note: leave?.reason,
+    reviewNote: leave?.review_note,
+    leaveType: leave?.leave_type_text || leave?.leave_type || 'N/A',
+    siteName: leave?.site_details?.site_name || leave?.site?.site_name || 'N/A',
+    siteAddress: leave?.site_details?.address || leave?.site?.address,
+    guardDetails: leave?.guard_details,
+    siteDetails: leave?.site_details
   }))
 
   return (
@@ -117,7 +113,7 @@ export default function LeavesPage() {
       <SidebarInset>
         <SiteHeader />
 
-        <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 pb-24 sm:px-6 lg:px-8 lg:pb-6">
           {/* Header Section */}
           <HeaderCard />
 
@@ -137,11 +133,11 @@ export default function LeavesPage() {
           )}
 
           {/* Leaves List */}
-          {!isLoading && (
+          {!isLoading && transformedLeaves.length > 0 && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
               <LeaveList
                 leaves={transformedLeaves}
-                onCancelRequest={handleCancelRequest}  // Changed from onDelete
+                onCancelRequest={handleCancelRequest}
                 pagination={pagination}
                 onPageChange={handlePageChange}
               />
