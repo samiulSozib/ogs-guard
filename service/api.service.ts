@@ -1,9 +1,8 @@
-import axios, { AxiosError, AxiosResponse } from 'axios';
-import { Client } from '@/app/types/client';
 import { ApiResponse, LoginCredentials, LoginResponse, User } from '@/app/types/api.types';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-ogs-v1.milliekit.com/api/v1';
-// const API_BASE_URL = 'https://api-ogs-v1.milliekit.com/api/v1';
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1';
+const API_BASE_URL = 'https://ogs.api.v1.1guardsecurity.com/api/v1';
 
 
 const api = axios.create({
@@ -14,7 +13,8 @@ const api = axios.create({
 });
 
 const loginapi = axios.create({
-  baseURL: "https://api-ogs-v1.milliekit.com/api/v1",
+  baseURL: "https://ogs.api.v1.1guardsecurity.com/api/v1",
+  //baseURL: "http://127.0.0.1:8000/api/v1",
   headers: {
     'Content-Type': 'application/json',
   },
@@ -59,10 +59,10 @@ export const handleApiResponse = async <T>(
     const response = await promise;
     console.log(!response.data.success)
     if (!response.data.success) {
-      
+
       throw new Error(response.data.message || 'Request failed');
     }
-    
+
     return response.data.body;
   } catch (error) {
     if (typeof error === 'string') {
@@ -78,12 +78,12 @@ export const authService = {
     handleApiResponse(
       loginapi.post<ApiResponse<LoginResponse>>('/guardemployee/auth/login', credentials)
     ),
-  
+
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   },
-  
+
   getProfile: () =>
     handleApiResponse(api.get<ApiResponse<User>>('/profile')),
 };

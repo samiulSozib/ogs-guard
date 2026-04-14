@@ -77,6 +77,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
   const handleStartTracking = useCallback(async () => {
     try {
       await dispatch(startLiveTracking()).unwrap();
+      await dispatch(updateLiveLocation()).unwrap();
       setIsOnline(true);
 
       // Start background heartbeat (every 2 minutes)
