@@ -26,7 +26,7 @@ const publicRoutes = [
   "/auth/login",
   "/auth/register",
   "/auth/forgot-password",
-  "/auth/reset-password",
+  "/reset-password",
 ];
 
 export default function RootLayout({

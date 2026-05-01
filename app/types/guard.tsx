@@ -23,7 +23,7 @@ export interface Guard {
   guard_type_id?: number;
   license_expiry_date?: string;
   issuing_source?: string;
-  
+
   // Profile data
   profile_data?: {
     place_of_birth?: string;
@@ -63,16 +63,16 @@ export interface Guard {
     }>
   };
 
-    
-  
+
+
   // Document types for upload
   document_types?: string[];
-  
+
   // Status
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  
+
   // Relationships
   guard_type?: GuardType;
   contacts?: GuardContact[];
@@ -169,3 +169,15 @@ export interface GuardProfileData {
     notes?: string
 }
 
+export interface GuardData {
+  full_name: string;
+  email: string;
+  phone: string;
+  date_of_birth?: string;
+  gender:string;
+  country: string;
+  state:string,
+  city: string;
+  address?: string;
+  zip_code?: string;
+}

@@ -18,6 +18,7 @@ import leaveReducer from './slices/leaveSlice'
 import incidentReducer from './slices/incidentSlice'
 import dashboardReducer from './slices/dashboardSlice'
 import guardLiveLocationReducer from './slices/guardLiveLocationSlice'
+import profileReducer from './slices/profileSlice'
 
 export const store = configureStore({
   reducer: {
@@ -39,7 +40,8 @@ export const store = configureStore({
     leave:leaveReducer,
     incident:incidentReducer,
     dashboard:dashboardReducer,
-    guardLiveLocation:guardLiveLocationReducer
+    guardLiveLocation:guardLiveLocationReducer,
+    profile:profileReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
