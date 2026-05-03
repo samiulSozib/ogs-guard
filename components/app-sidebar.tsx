@@ -31,11 +31,11 @@ export const navItems = {
       url: "/dashboard",
       icon: Search,
     },
-    {
-      title: "Reports",
-      url: "/reports",
-      icon: Sparkles,
-    },
+    // {
+    //   title: "Reports",
+    //   url: "/reports",
+    //   icon: Sparkles,
+    // },
     {
       title: "Incidents",
       url: "/incidents",

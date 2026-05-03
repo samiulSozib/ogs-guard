@@ -27,13 +27,13 @@ const bottomNavItems = [
     color: "from-blue-500 to-cyan-500",
     badge: "3",
   },
-  {
-    title: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-    color: "from-purple-500 to-pink-500",
-    badge: "3",
-  },
+  // {
+  //   title: "Reports",
+  //   href: "/reports",
+  //   icon: BarChart3,
+  //   color: "from-purple-500 to-pink-500",
+  //   badge: "3",
+  // },
   {
     title: "Incidents",
     href: "/incidents",
@@ -134,8 +134,8 @@ export function BottomNav({ className, variant = "glass" }: BottomNavProps) {
                 className={cn(
                   "relative flex h-12 w-12 items-center justify-center rounded-2xl",
                   "transition-all duration-300",
-                  isActive 
-                    ? "text-primary" 
+                  isActive
+                    ? "text-primary"
                     : "text-muted-foreground group-hover:text-foreground/80",
                   variant === "neumorphic" && isActive && "shadow-inner"
                 )}
@@ -164,7 +164,7 @@ export function BottomNav({ className, variant = "glass" }: BottomNavProps) {
                         "border-2 border-background"
                       )}
                     >
-                      
+
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -175,8 +175,8 @@ export function BottomNav({ className, variant = "glass" }: BottomNavProps) {
                 className={cn(
                   "text-[10px] font-medium mt-1",
                   "transition-all duration-300",
-                  isActive 
-                    ? "text-primary opacity-100" 
+                  isActive
+                    ? "text-primary opacity-100"
                     : "text-muted-foreground/70 opacity-70 group-hover:opacity-100"
                 )}
                 animate={isActive ? { y: 0 } : { y: 0 }}
