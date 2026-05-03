@@ -25,17 +25,17 @@ export const bottomNavItems = [
         </svg>
         ,
     },
-    {
-        title: "Reports",
-        href: "/reports",
-        icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2.91667 15.0003V5.83366C2.91667 2.50033 3.75001 1.66699 7.08334 1.66699H12.9167C16.25 1.66699 17.0833 2.50033 17.0833 5.83366V14.167C17.0833 14.2837 17.0833 14.4003 17.075 14.517" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M5.29167 12.5H17.0833V15.4167C17.0833 17.025 15.775 18.3333 14.1667 18.3333H5.83334C4.22501 18.3333 2.91667 17.025 2.91667 15.4167V14.875C2.91667 13.5667 3.98334 12.5 5.29167 12.5Z" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M6.66667 5.83301H13.3333" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M6.66667 8.75H10.8333" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        ,
-    },
+    // {
+    //     title: "Reports",
+    //     href: "/reports",
+    //     icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    //         <path d="M2.91667 15.0003V5.83366C2.91667 2.50033 3.75001 1.66699 7.08334 1.66699H12.9167C16.25 1.66699 17.0833 2.50033 17.0833 5.83366V14.167C17.0833 14.2837 17.0833 14.4003 17.075 14.517" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    //         <path d="M5.29167 12.5H17.0833V15.4167C17.0833 17.025 15.775 18.3333 14.1667 18.3333H5.83334C4.22501 18.3333 2.91667 17.025 2.91667 15.4167V14.875C2.91667 13.5667 3.98334 12.5 5.29167 12.5Z" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    //         <path d="M6.66667 5.83301H13.3333" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    //         <path d="M6.66667 8.75H10.8333" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    //     </svg>
+    //     ,
+    // },
     {
         title: "Salary",
         href: "/salary",
