@@ -183,6 +183,33 @@ export interface ResetPasswordDto {
     password_confirmation: string;
 }
 
+
+export interface RegisterData {
+  full_name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface RegisterResponse {
+  guard: {
+    id: number;
+    user_id: number;
+    guard_code: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
+    is_active: boolean;
+    created_at: string;
+  };
+  user: {
+    id: number;
+    email: string;
+    created_at: string;
+  };
+  token?: string;
+}
+
 // Add to ProfileState
 export interface ProfileState {
     guard: Guard | null;
@@ -199,4 +226,6 @@ export interface ProfileState {
     isResettingPassword: boolean;
     error: string | null;
     successMessage: string | null;
+    isRegistering: boolean;  // Add this
+    isRegistered: boolean;    // Add this
 }

@@ -8,6 +8,8 @@ import {
     ChangePasswordDto,
     ForgotPasswordDto,
     ResetPasswordDto,
+    RegisterData,
+    RegisterResponse,
 } from "@/app/types/profile";
 
 /* ------------------ Initial State ------------------ */
@@ -20,6 +22,8 @@ const initialState: ProfileState = {
     isChangingPassword: false,
     isSendingResetLink: false,
     isResettingPassword: false,
+    isRegistering: false,
+    isRegistered: false,
     error: null,
     successMessage: null,
 };
@@ -111,6 +115,23 @@ export const resetPassword = createAsyncThunk(
     }
 );
 
+// Register new guard
+export const register = createAsyncThunk(
+    "profile/register",
+    async (data: RegisterData | FormData, { rejectWithValue }) => {
+        try {
+            const response = await profileService.register(data);
+            return response;
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to register";
+            return rejectWithValue(message);
+        }
+    }
+);
+
 /* ------------------ Slice ------------------ */
 
 const profileSlice = createSlice({
@@ -128,6 +149,7 @@ const profileSlice = createSlice({
             state.user = null;
             state.error = null;
             state.successMessage = null;
+            state.isRegistered = false;
         },
         updateGuardLocally: (state, action: PayloadAction<Partial<Guard>>) => {
             if (state.guard) {
@@ -138,6 +160,12 @@ const profileSlice = createSlice({
             if (state.guard) {
                 state.guard.profile_image_url = action.payload;
             }
+        },
+        resetRegisterState: (state) => {
+            state.isRegistering = false;
+            state.isRegistered = false;
+            state.error = null;
+            state.successMessage = null;
         },
     },
     extraReducers: (builder) => {
@@ -216,6 +244,28 @@ const profileSlice = createSlice({
             .addCase(resetPassword.rejected, (state, action) => {
                 state.isResettingPassword = false;
                 state.error = action.payload as string;
+            })
+
+            /* ---------- Register ---------- */
+            .addCase(register.pending, (state) => {
+                state.isRegistering = true;
+                state.isRegistered = false;
+                state.error = null;
+                state.successMessage = null;
+            })
+            .addCase(register.fulfilled, (state, action) => {
+                state.isRegistering = false;
+                state.isRegistered = true;
+                state.successMessage = "Registration successful! Please login.";
+                // Optionally store the registered guard info
+                if (action.payload.guard) {
+                    state.guard = action.payload.guard as unknown as Guard;
+                }
+            })
+            .addCase(register.rejected, (state, action) => {
+                state.isRegistering = false;
+                state.isRegistered = false;
+                state.error = action.payload as string;
             });
     },
 });
@@ -228,6 +278,7 @@ export const {
     clearProfileState,
     updateGuardLocally,
     updateProfileImage,
+    resetRegisterState,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

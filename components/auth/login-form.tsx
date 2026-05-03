@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { login } from "@/store/slices/authSlice"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useRef, useCallback } from "react"
+import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import SweetAlertService from "@/lib/sweetAlert"
 import { useAppDispatch } from "@/hooks/useAppDispatch";
@@ -47,7 +48,7 @@ export function LoginForm({
     }
     return false
   })
-  
+
   const hasLoadedCredentials = useRef(false)
 
   const {
@@ -72,12 +73,12 @@ export function LoginForm({
     if (!hasLoadedCredentials.current && rememberMe) {
       const savedEmail = localStorage.getItem(STORAGE_KEYS.SAVED_EMAIL)
       const savedPassword = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
-      
+
       if (savedEmail && savedPassword) {
         setValue('email', savedEmail)
         setValue('password', savedPassword)
       }
-      
+
       hasLoadedCredentials.current = true
     }
   }, [rememberMe, setValue])
@@ -109,7 +110,7 @@ export function LoginForm({
     setRememberMe(false)
     setValue('email', '')
     setValue('password', '')
-    
+
     await SweetAlertService.success(
       'Credentials Cleared',
       'Saved login credentials have been removed.',
@@ -123,7 +124,7 @@ export function LoginForm({
   const onSubmit = async (data: LoginFormData) => {
     try {
       console.log('Submitting form with data:', data);
-      
+
       const result = await dispatch(login(data))
 
       if (login.fulfilled.match(result)) {
@@ -143,7 +144,7 @@ export function LoginForm({
               showConfirmButton: false,
             }
           );
-          
+
           setTimeout(() => {
             router.push('/dashboard')
           }, 1600);
@@ -215,7 +216,7 @@ export function LoginForm({
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="flex flex-2 flex-col bg-[#6b0016] p-8 text-white md:p-16 rounded-l-4xl">
+          <div className="flex flex-2 flex-col bg-[#6b0016] p-8 text-white md:p-16">
             <h2 className="mb-6 text-left text-xl font-semibold md:text-2xl">
               Login
             </h2>
@@ -276,7 +277,7 @@ export function LoginForm({
                       Remember me
                     </label>
                   </div>
-                  
+
                   {/* Clear Saved Credentials Button */}
                   {hasSavedCredentials() && (
                     <button
@@ -289,13 +290,19 @@ export function LoginForm({
                   )}
                 </div>
 
-                {/* Forgot Password Link */}
-                <div className="text-right text-xs mt-2">
+                {/* Links Section */}
+                <div className="flex items-center justify-between mt-2">
+                  <Link
+                    href="/auth/register"
+                    className="text-xs text-white/70 hover:text-white underline transition-colors"
+                  >
+                    Don't have an account? Register
+                  </Link>
+
                   <button
                     type="button"
-                    className="text-white/70 hover:text-white underline transition-colors"
+                    className="text-xs text-white/70 hover:text-white underline transition-colors"
                     onClick={() => {
-                      // Handle forgot password
                       router.push('/auth/forgot-password');
                     }}
                   >

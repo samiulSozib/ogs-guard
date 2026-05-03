@@ -1,6 +1,14 @@
 // service/profile.service.ts
 import { ApiResponse } from "@/app/types/api.types";
-import { ChangePasswordDto, Guard, UpdateGuardProfile, ForgotPasswordDto, ResetPasswordDto } from "@/app/types/profile";
+import {
+  ChangePasswordDto,
+  Guard,
+  UpdateGuardProfile,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  RegisterData,
+  RegisterResponse
+} from "@/app/types/profile";
 import api, { handleApiResponse } from "./api.service";
 
 /* =========================================================
@@ -55,6 +63,21 @@ export const profileService = {
       api.post<ApiResponse<{ message: string }>>(
         "/guardemployee/auth/reset-password",
         data
+      )
+    ),
+
+  /* ---------- Register new guard ---------- */
+  register: (data: RegisterData | FormData) =>
+    handleApiResponse(
+      api.post<ApiResponse<RegisterResponse>>(
+        "/guardemployee/auth/register",
+        data,
+        {
+          headers:
+            data instanceof FormData
+              ? { "Content-Type": "multipart/form-data" }
+              : { "Content-Type": "application/json" },
+        }
       )
     ),
 };
