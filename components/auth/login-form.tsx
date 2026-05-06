@@ -197,16 +197,16 @@ export function LoginForm({
               Welcome to the
             </h2>
             <h1 className="mt-1 text-xl font-bold tracking-wide md:text-2xl">
-              Security{" "}
+              One Guard{" "}
               <span className="font-light text-[#b9a58b]">
-                Management
+                Security
               </span>{" "}
-              System
+              
             </h1>
 
             <div className="mt-8 md:mt-10">
               <Image
-                src="/img/login_logo.png"
+                src="/img/og-image.png"
                 width={140}
                 height={140}
                 alt="One Guard Logo"
