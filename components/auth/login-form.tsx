@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { CardContent } from "@/components/ui/card"
 import {
   Field,
   FieldGroup,
@@ -49,16 +49,14 @@ export function LoginForm({
     return false
   })
 
-  const hasLoadedCredentials = useRef(false)
-
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
     setFocus,
     reset,
-    clearErrors,
     setValue,
+    trigger, // Add trigger to validate fields manually
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -69,25 +67,20 @@ export function LoginForm({
   })
 
   // Load saved credentials on mount
-  const loadSavedCredentials = useCallback(() => {
-    if (!hasLoadedCredentials.current && rememberMe) {
+  useEffect(() => {
+    if (rememberMe) {
       const savedEmail = localStorage.getItem(STORAGE_KEYS.SAVED_EMAIL)
       const savedPassword = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
 
       if (savedEmail && savedPassword) {
         setValue('email', savedEmail)
         setValue('password', savedPassword)
+        // Trigger validation after setting values
+        trigger(['email', 'password'])
       }
-
-      hasLoadedCredentials.current = true
     }
-  }, [rememberMe, setValue])
-
-  useEffect(() => {
-    clearErrors()
-    loadSavedCredentials()
     setFocus('email')
-  }, [clearErrors, loadSavedCredentials, setFocus])
+  }, [rememberMe, setValue, setFocus, trigger])
 
   // Save credentials function
   const saveCredentials = useCallback((email: string, password: string, remember: boolean) => {
@@ -101,25 +94,6 @@ export function LoginForm({
       localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME)
     }
   }, [])
-
-  // Clear saved credentials function
-  const clearSavedCredentials = useCallback(async () => {
-    localStorage.removeItem(STORAGE_KEYS.SAVED_EMAIL)
-    localStorage.removeItem(STORAGE_KEYS.SAVED_PASSWORD)
-    localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME)
-    setRememberMe(false)
-    setValue('email', '')
-    setValue('password', '')
-
-    await SweetAlertService.success(
-      'Credentials Cleared',
-      'Saved login credentials have been removed.',
-      {
-        timer: 1500,
-        showConfirmButton: false,
-      }
-    )
-  }, [setValue])
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -234,6 +208,10 @@ export function LoginForm({
                     className={`bg-white text-black placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''}`}
                     {...register('email')}
                     autoComplete="email"
+                    onChange={(e) => {
+                      register('email').onChange(e)
+                      trigger('email') // Trigger validation on change
+                    }}
                   />
                   {errors.email && (
                     <p className="mt-1 text-xs text-red-300">
@@ -253,6 +231,10 @@ export function LoginForm({
                     className={`bg-white text-black placeholder:text-gray-500 ${errors.password ? 'border-red-500' : ''}`}
                     {...register('password')}
                     autoComplete="current-password"
+                    onChange={(e) => {
+                      register('password').onChange(e)
+                      trigger('password') // Trigger validation on change
+                    }}
                   />
                   {errors.password && (
                     <p className="mt-1 text-xs text-red-300">
@@ -261,7 +243,7 @@ export function LoginForm({
                   )}
                 </Field>
 
-                {/* Remember Me and Clear Credentials Section */}
+                {/* Remember Me Section */}
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -277,17 +259,6 @@ export function LoginForm({
                       Remember me
                     </label>
                   </div>
-
-                  {/* Clear Saved Credentials Button */}
-                  {hasSavedCredentials() && (
-                    <button
-                      type="button"
-                      onClick={clearSavedCredentials}
-                      className="text-xs text-white/70 hover:text-white underline transition-colors"
-                    >
-                      Clear saved credentials
-                    </button>
-                  )}
                 </div>
 
                 {/* Links Section */}

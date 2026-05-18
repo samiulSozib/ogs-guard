@@ -2,11 +2,11 @@
 
 import { ApiResponse } from "@/app/types/api.types";
 import api, { handleApiResponse } from "./api.service";
-import { 
-  LiveLocationData, 
-  LiveLocationResponse, 
-  HeartbeatResponse, 
-  OfflineResponse 
+import {
+  LiveLocationData,
+  LiveLocationResponse,
+  HeartbeatResponse,
+  OfflineResponse
 } from "@/app/types/guardLiveLocation";
 
 export const guardLiveLocationService = {

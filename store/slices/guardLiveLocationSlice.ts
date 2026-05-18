@@ -2,8 +2,8 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { guardLiveLocationService } from "@/service/guardLiveLocation.service";
-import { 
-  LiveLocationData, 
+import {
+  LiveLocationData,
   GuardLiveLocationState
 } from "@/app/types/guardLiveLocation";
 
@@ -66,7 +66,7 @@ const getDeviceInfo = () => {
   const userAgent = navigator.userAgent;
   let deviceModel = "Unknown";
   let osVersion = "Unknown";
-  
+
   if (/iPhone/i.test(userAgent)) {
     deviceModel = "iPhone";
     const match = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
@@ -89,7 +89,7 @@ const getDeviceInfo = () => {
     deviceModel = "Linux Device";
     osVersion = "Linux";
   }
-  
+
   return {
     device_model: deviceModel,
     os_version: osVersion,
@@ -101,11 +101,11 @@ const getDeviceInfo = () => {
 function getNetworkType(): 'wifi' | 'cellular' | 'ethernet' | 'unknown' {
   const nav = navigator as NavigatorWithConnection;
   const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
-  
+
   if (!navigator.onLine) {
     return 'unknown';
   }
-  
+
   if (connection) {
     if (connection.type) {
       const type = connection.type.toLowerCase();
@@ -113,24 +113,24 @@ function getNetworkType(): 'wifi' | 'cellular' | 'ethernet' | 'unknown' {
       if (type === 'cellular') return 'cellular';
       if (type === 'ethernet') return 'ethernet';
     }
-    
+
     if (connection.effectiveType) {
       const effectiveType = connection.effectiveType.toLowerCase();
       if (effectiveType === '4g' || effectiveType === '3g' || effectiveType === '2g' || effectiveType === 'slow-2g') {
         return 'cellular';
       }
     }
-    
+
     if (connection.downlink && connection.downlink > 10) {
       return 'wifi';
     }
   }
-  
+
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   if (!isMobile) {
     return 'wifi';
   }
-  
+
   return 'unknown';
 }
 
@@ -164,7 +164,7 @@ export const updateLiveLocation = createAsyncThunk(
     try {
       const position = await getCurrentPosition();
       const deviceInfo = getDeviceInfo();
-      
+
       const locationData: LiveLocationData = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -179,7 +179,7 @@ export const updateLiveLocation = createAsyncThunk(
         ...deviceInfo,
         status: "active",
       };
-      
+
       const response = await guardLiveLocationService.updateLocation(locationData);
       return response;
     } catch (error: unknown) {
@@ -226,10 +226,10 @@ export const startLiveTracking = createAsyncThunk(
       const heartbeatInterval = window.setInterval(() => {
         dispatch(sendHeartbeat());
       }, 120000); // 2 minutes
-      
+
       localStorage.setItem("heartbeatIntervalId", String(heartbeatInterval));
       localStorage.setItem("guard_tracking_active", "true");
-      
+
       return { heartbeatInterval };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to start tracking";
@@ -245,17 +245,17 @@ export const stopLiveTracking = createAsyncThunk(
     try {
       // Mark as offline
       await dispatch(markOffline()).unwrap();
-      
+
       // Clear heartbeat interval
       const heartbeatIntervalId = localStorage.getItem("heartbeatIntervalId");
-      
+
       if (heartbeatIntervalId) {
         window.clearInterval(parseInt(heartbeatIntervalId));
         localStorage.removeItem("heartbeatIntervalId");
       }
-      
+
       localStorage.setItem("guard_tracking_active", "false");
-      
+
       return true;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to stop tracking";
@@ -271,7 +271,7 @@ export const restoreTracking = createAsyncThunk(
     const savedState = localStorage.getItem('guard_tracking_active');
     if (savedState === 'true') {
       const heartbeatIntervalId = localStorage.getItem("heartbeatIntervalId");
-      
+
       if (!heartbeatIntervalId) {
         // Restart tracking if interval is missing
         await dispatch(startLiveTracking()).unwrap();
@@ -402,7 +402,7 @@ const guardLiveLocationSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       .addCase(restoreTracking.fulfilled, (state, action) => {
         if (action.payload) {
           state.isTracking = true;
@@ -411,10 +411,10 @@ const guardLiveLocationSlice = createSlice({
   },
 });
 
-export const { 
-  clearLocationError, 
-  resetLocationState, 
-  updateDistanceFromDuty 
+export const {
+  clearLocationError,
+  resetLocationState,
+  updateDistanceFromDuty
 } = guardLiveLocationSlice.actions;
 
 export default guardLiveLocationSlice.reducer;
