@@ -120,7 +120,7 @@ export function LoginForm({
           );
 
           setTimeout(() => {
-            router.push('/dashboard')
+            router.push('/')
           }, 1600);
         }
       } else if (login.rejected.match(result)) {

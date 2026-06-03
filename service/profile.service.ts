@@ -27,7 +27,7 @@ export const profileService = {
   /* ---------- Update profile ---------- */
   updateProfile: (data: UpdateGuardProfile | FormData) =>
     handleApiResponse(
-      api.put<ApiResponse<{ guard: Guard }>>(
+      api.post<ApiResponse<{ guard: Guard }>>(
         "/guardemployee/auth/update-profile",
         data,
         {

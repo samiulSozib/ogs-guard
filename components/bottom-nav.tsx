@@ -22,7 +22,7 @@ import {
 const bottomNavItems = [
   {
     title: "Home",
-    href: "/dashboard",
+    href: "/",
     icon: Home,
     color: "from-blue-500 to-cyan-500",
     badge: "3",

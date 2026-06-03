@@ -6,7 +6,7 @@
 export const bottomNavItems = [
     {
         title: "Home",
-        href: "/dashboard",
+        href: "/",
         icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M7.51667 2.36713L3.025 5.86713C2.275 6.45046 1.66667 7.69213 1.66667 8.63379V14.8088C1.66667 16.7421 3.24167 18.3255 5.175 18.3255H14.825C16.7583 18.3255 18.3333 16.7421 18.3333 14.8171V8.75046C18.3333 7.74213 17.6583 6.45046 16.8333 5.87546L11.6833 2.26713C10.5167 1.45046 8.64167 1.49213 7.51667 2.36713Z" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M10 14.9912V12.4912" stroke="#BF99A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />

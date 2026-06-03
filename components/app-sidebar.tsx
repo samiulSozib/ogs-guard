@@ -28,7 +28,7 @@ export const navItems = {
   navMain: [
     {
       title: "Home",
-      url: "/dashboard",
+      url: "/",
       icon: Search,
     },
     // {
@@ -63,12 +63,12 @@ export const navItems = {
   ],
   teams: [
     {
-      name: "Acme Inc",
+      name: "One Guard Security",
       logo: Command,
       plan: "Enterprise",
     },
     {
-      name: "Acme Corp.",
+      name: "OGS",
       logo: AudioWaveform,
       plan: "Startup",
     },

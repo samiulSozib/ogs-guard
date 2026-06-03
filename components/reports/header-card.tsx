@@ -13,7 +13,7 @@ export function HeaderCard() {
     const isMobile = useIsMobile()
     
     // Determine if we're not on the main dashboard
-    const isNotDashboard = pathname !== '/dashboard' && pathname !== '/'
+    const isNotDashboard = pathname !== '/' && pathname !== '/'
     
     const handleBack = () => {
       if (isNotDashboard) {

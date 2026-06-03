@@ -12,13 +12,13 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      router.push('/dashboard');
+      router.push('/');
     }
   }, [token, router]);
 
   const handleLoginSuccess = () => {
     console.log('Login successful!');
-    router.push('/dashboard');
+    router.push('/');
   };
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
