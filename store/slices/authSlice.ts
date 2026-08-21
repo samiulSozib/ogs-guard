@@ -99,7 +99,7 @@ const authSlice = createSlice({
                     'Login Failed',
                     errorMessage || 'Please check your credentials and try again.',
                     {
-                        timer:2000,
+                        timer: 2000,
                         confirmButtonColor: '#6b0016',
                     }
                 );

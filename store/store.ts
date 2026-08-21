@@ -19,29 +19,41 @@ import incidentReducer from './slices/incidentSlice'
 import dashboardReducer from './slices/dashboardSlice'
 import guardLiveLocationReducer from './slices/guardLiveLocationSlice'
 import profileReducer from './slices/profileSlice'
+import clientProfileReducer from './slices/client/clientProfileSlice'
+import clientDashboardReducer from './slices/client/clientDashboardSlice'
+import clientSiteReducer from './slices/client/clientSiteSlice'
+import clientAssignmentReducer from './slices/client/assignmentSlice';
+import clientGuardReducer from './slices/client/guardSlice';
+import dutyReportReducer from './slices/dutyReportSlice'
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     client: clientReducer,
     guard: guardReducer,
-    contact:contactReducer,
-    site:siteReducer,
-    siteLocation:siteLocationReducer,
-    dutyTimeTypes:dutyTimeTypesReducer,
-    duty:dutyReducer,
-    guardAssignment:guardAssignmentReducer,
-    dutyAssignmentReport:dutyAssignmentReportReducer,
-    dutyAttendance:dutyAttendanceReducer,
-    guardTypes:guardTypesReducer,
-    expenseCategory:expenseCategoryReducer,
-    complaint:complaintReducer,
-    expense:expenseReducer,
-    leave:leaveReducer,
-    incident:incidentReducer,
-    dashboard:dashboardReducer,
-    guardLiveLocation:guardLiveLocationReducer,
-    profile:profileReducer,
+    contact: contactReducer,
+    site: siteReducer,
+    siteLocation: siteLocationReducer,
+    dutyTimeTypes: dutyTimeTypesReducer,
+    duty: dutyReducer,
+    guardAssignment: guardAssignmentReducer,
+    dutyAssignmentReport: dutyAssignmentReportReducer,
+    dutyAttendance: dutyAttendanceReducer,
+    guardTypes: guardTypesReducer,
+    expenseCategory: expenseCategoryReducer,
+    complaint: complaintReducer,
+    expense: expenseReducer,
+    leave: leaveReducer,
+    incident: incidentReducer,
+    dashboard: dashboardReducer,
+    guardLiveLocation: guardLiveLocationReducer,
+    profile: profileReducer,
+    clientProfile: clientProfileReducer,
+    clientDashboard: clientDashboardReducer,
+    clientSite: clientSiteReducer,
+    clientAssignments: clientAssignmentReducer,
+    clientGuards: clientGuardReducer,
+    dutyReports:dutyReportReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

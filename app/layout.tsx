@@ -1,3 +1,80 @@
+// "use client";
+
+// import { Geist, Geist_Mono } from "next/font/google";
+// import "./globals.css";
+// import { usePathname } from "next/navigation";
+
+// import { ThemeProvider } from "@/components/providers/theme-provider";
+// import { AlertProvider } from "@/components/contexts/AlertContext";
+// import { Provider } from "react-redux";
+// import { store } from "@/store/store";
+// import { SweetAlertProvider } from "@/components/providers/sweetAlertProvider";
+// import GuardedRoute from "@/components/authGuardedRoute";
+
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
+
+// const geistMono = Geist_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
+
+// // Public routes that don't require authentication
+// const publicRoutes = [
+//   "/auth/login",
+//   "/auth/register",
+//   "/auth/forgot-password",
+//   "/reset-password",
+// ];
+
+// export default function RootLayout({
+//   children,
+// }: Readonly<{
+//   children: React.ReactNode;
+// }>) {
+//   const pathname = usePathname();
+//   const isPublicRoute = publicRoutes.includes(pathname);
+
+//   return (
+//     <html lang="en" suppressHydrationWarning>
+//       <body
+//         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+//       >
+//         <Provider store={store}>
+//           <ThemeProvider
+//             attribute="class"
+//             defaultTheme="system"
+//             enableSystem
+//             disableTransitionOnChange
+//           >
+//             <SweetAlertProvider />
+//             {isPublicRoute ? (
+//               // Public routes (login, register, etc.) - no protection
+//               <AlertProvider>
+//                 <main className="flex flex-1 flex-col h-full">
+//                   {children}
+//                 </main>
+//               </AlertProvider>
+//             ) : (
+//               // Protected routes - require authentication
+//               <GuardedRoute>
+//                 <AlertProvider>
+//                   <main className="flex flex-1 flex-col h-full">
+//                     {children}
+//                   </main>
+//                 </AlertProvider>
+//               </GuardedRoute>
+//             )}
+//           </ThemeProvider>
+//         </Provider>
+//       </body>
+//     </html>
+//   );
+// }
+
+// app/layout.tsx
 "use client";
 
 import { Geist, Geist_Mono } from "next/font/google";
@@ -9,7 +86,7 @@ import { AlertProvider } from "@/components/contexts/AlertContext";
 import { Provider } from "react-redux";
 import { store } from "@/store/store";
 import { SweetAlertProvider } from "@/components/providers/sweetAlertProvider";
-import GuardedRoute from "@/components/authGuardedRoute";
+import CombinedGuardedRoute from "@/components/CombinedGuardedRoute";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +103,10 @@ const publicRoutes = [
   "/auth/login",
   "/auth/register",
   "/auth/forgot-password",
-  "/reset-password",
+  "/auth/reset-password",
+  "/auth/client/register",
+  "/auth/client/forgot-password",
+  "/auth/client/reset-password",
 ];
 
 export default function RootLayout({
@@ -35,7 +115,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -58,14 +138,14 @@ export default function RootLayout({
                 </main>
               </AlertProvider>
             ) : (
-              // Protected routes - require authentication
-              <GuardedRoute>
+              // Protected routes - require authentication (supports both guard and client)
+              <CombinedGuardedRoute>
                 <AlertProvider>
                   <main className="flex flex-1 flex-col h-full">
                     {children}
                   </main>
                 </AlertProvider>
-              </GuardedRoute>
+              </CombinedGuardedRoute>
             )}
           </ThemeProvider>
         </Provider>

@@ -111,7 +111,7 @@ export default function RegisterPage() {
               <span className="font-light text-[#b9a58b]">
                 Security
               </span>{" "}
-              
+
             </h1>
 
             <div className="mt-8 md:mt-10">

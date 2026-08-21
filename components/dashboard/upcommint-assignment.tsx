@@ -33,22 +33,22 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
   // Get current date for comparisons
   const today = new Date(currentTime)
   today.setHours(0, 0, 0, 0)
-  
+
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   // Helper function to get time left until start
   const getTimeLeftUntilStart = (startDateTime: Date) => {
     const diffMs = startDateTime.getTime() - currentTime.getTime()
-    
+
     if (diffMs <= 0) {
       return { hours: 0, minutes: 0, seconds: 0, isPast: true }
     }
-    
+
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
     const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000)
-    
+
     return { hours: diffHours, minutes: diffMinutes, seconds: diffSeconds, isPast: false }
   }
 
@@ -76,18 +76,18 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
           const startDate = new Date(assignment.duty.start_datetime)
           const startDateOnly = new Date(startDate)
           startDateOnly.setHours(0, 0, 0, 0)
-          
+
           const endDate = new Date(assignment.duty.end_datetime)
           const startTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           const endTime = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          
+
           // Compare dates for label
           const isToday = startDateOnly.getTime() === today.getTime()
           const isTomorrow = startDateOnly.getTime() === tomorrow.getTime()
-          
+
           // Get time left until start (updates every second)
           const timeLeft = getTimeLeftUntilStart(startDate)
-          
+
           let dateLabel = format(startDate, "EEEE, MMM d")
           if (isToday) dateLabel = `Today, ${format(startDate, "MMM d")}`
           if (isTomorrow) dateLabel = `Tomorrow, ${format(startDate, "MMM d")}`
@@ -98,7 +98,7 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
               className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-md"
             >
               <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#3a000a] to-[#6b0015]" />
-              
+
               <div className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-3">
@@ -146,7 +146,7 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
                     {/* Location Details */}
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-gray-400">Post:</span>
-                      <span className="text-xs text-gray-700">{assignment.location.title}</span>
+                      <span className="text-xs text-gray-700">{assignment?.location?.title}</span>
                     </div>
 
                     {/* Countdown Timer */}
@@ -154,28 +154,28 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
                       <div className="pt-2">
                         <div className={`
                           inline-flex items-center gap-2 rounded-full px-3 py-1.5
-                          ${timeLeft.hours === 0 && timeLeft.minutes < 60 
-                            ? 'bg-red-50 animate-pulse' 
-                            : timeLeft.hours === 0 
-                              ? 'bg-orange-50' 
+                          ${timeLeft.hours === 0 && timeLeft.minutes < 60
+                            ? 'bg-red-50 animate-pulse'
+                            : timeLeft.hours === 0
+                              ? 'bg-orange-50'
                               : 'bg-amber-50'
                           }
                         `}>
                           <Hourglass className={`
                             h-3.5 w-3.5
-                            ${timeLeft.hours === 0 && timeLeft.minutes < 60 
-                              ? 'text-red-600' 
-                              : timeLeft.hours === 0 
-                                ? 'text-orange-600' 
+                            ${timeLeft.hours === 0 && timeLeft.minutes < 60
+                              ? 'text-red-600'
+                              : timeLeft.hours === 0
+                                ? 'text-orange-600'
                                 : 'text-amber-600'
                             }
                           `} />
                           <span className={`
                             text-xs font-mono font-medium
-                            ${timeLeft.hours === 0 && timeLeft.minutes < 60 
-                              ? 'text-red-700' 
-                              : timeLeft.hours === 0 
-                                ? 'text-orange-700' 
+                            ${timeLeft.hours === 0 && timeLeft.minutes < 60
+                              ? 'text-red-700'
+                              : timeLeft.hours === 0
+                                ? 'text-orange-700'
                                 : 'text-amber-700'
                             }
                           `}>

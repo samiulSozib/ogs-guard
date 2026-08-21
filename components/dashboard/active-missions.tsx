@@ -38,7 +38,7 @@ export function ActiveMission({ assignment }: ActiveMissionProps) {
             </div>
             <div className="flex items-center gap-2 text-sm">
               <MapPinned className="h-4 w-4" />
-              <span>Location: {assignment.location.title}</span>
+              <span>Location: {assignment?.location?.title}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Building2 className="h-4 w-4" />
@@ -53,7 +53,7 @@ export function ActiveMission({ assignment }: ActiveMissionProps) {
             </div>
             <div className="flex-1">
               <div className="h-2 overflow-hidden rounded-full bg-white/20">
-                <div 
+                <div
                   className="h-full bg-white transition-all duration-500"
                   style={{ width: `${assignment.progress.percentage}%` }}
                 />
