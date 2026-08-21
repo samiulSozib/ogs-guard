@@ -11,7 +11,6 @@ import { Plus, Loader2 } from "lucide-react"
 import { MissionList } from "@/components/missions/mission-list"
 import Link from "next/link"
 import { BottomNav } from "@/components/bottom-nav"
-import { bottomNavItems } from "@/components/bottom-nav-icon"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
 import { fetchAssignments } from "@/store/slices/guardAssignmentSlice"
@@ -47,7 +46,7 @@ export default function MissionsPage() {
     const duty = assignment.duty;
     const site = duty?.site;
     const guardUser = assignment.guard_user;
-    
+
     return {
       id: assignment.id,
       title: site?.site_name || duty?.title || "Mission",
@@ -65,11 +64,11 @@ export default function MissionsPage() {
       document: "report.pdf",
       images: ["/img/h1.png", "/img/h2.png", "/img/h3.png"],
       note: duty?.notes || "No additional notes",
-      
+
       // Additional data for maps
       latitude: site?.latitude,
       longitude: site?.longitude,
-      
+
       // Guards assigned to this mission
       guards: [
         {
@@ -79,11 +78,11 @@ export default function MissionsPage() {
           isOnline: true,
         }
       ],
-      
+
       // Duty details
       dutyDetails: assignment.duty_details,
       siteDetails: assignment.site_details,
-      
+
       // Stats
       incidentCount: 2, // You can fetch this from another API
       reportCount: 1,
@@ -130,7 +129,7 @@ export default function MissionsPage() {
           {/* Missions List */}
           {!isLoading && (
             <div className="">
-              <MissionList 
+              <MissionList
                 missions={transformedMissions}
                 pagination={pagination}
                 onPageChange={handlePageChange}
