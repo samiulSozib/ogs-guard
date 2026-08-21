@@ -134,14 +134,14 @@ export default function ClientRegisterPage() {
     const cleanedData = Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== '' && value !== undefined)
     );
-    const result = await dispatch(clientRegister(cleanedData));
+    // const result = await dispatch(clientRegister(cleanedData));
 
-    if (clientRegister.fulfilled.match(result)) {
-      SweetAlertService.success(
-        'Registration Successful!',
-        'Your client account has been created. Please login to continue.'
-      );
-    }
+    // if (clientRegister.fulfilled.match(result)) {
+    //   SweetAlertService.success(
+    //     'Registration Successful!',
+    //     'Your client account has been created. Please login to continue.'
+    //   );
+    // }
   };
 
   return (
