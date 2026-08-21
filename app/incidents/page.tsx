@@ -11,7 +11,6 @@ import { Plus, Loader2 } from "lucide-react"
 import { IncidentList } from "@/components/incidents/incident-list"
 import Link from "next/link"
 import { BottomNav } from "@/components/bottom-nav"
-import { bottomNavItems } from "@/components/bottom-nav-icon"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
 import { fetchIncidents } from "@/store/slices/incidentSlice"
@@ -52,7 +51,7 @@ export default function IncidentsPage() {
     const site = incident.site;
     const client = site?.client;
     const siteLocation = incident.site_location;
-    
+
     return {
       id: incident.id,
       title: incident.title,
@@ -126,7 +125,7 @@ export default function IncidentsPage() {
           {/* Incidents List */}
           {!isLoading && (
             <div className="">
-              <IncidentList 
+              <IncidentList
                 incidents={transformedIncidents}
                 pagination={pagination}
                 onPageChange={handlePageChange}
