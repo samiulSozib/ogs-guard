@@ -1,7 +1,6 @@
 // components/dashboard/upcoming-assignments.tsx
 import { DashboardAssignment } from "@/app/types/dashboard"
-import { Calendar, Clock, MapPin, Building2, ChevronRight, Hourglass } from "lucide-react"
-import { format } from "date-fns"
+import { Calendar, Clock, MapPin, Building2, ChevronRight, Hourglass, Globe } from "lucide-react"
 import { useState, useEffect } from "react"
 
 interface UpcomingAssignmentsProps {
@@ -11,7 +10,6 @@ interface UpcomingAssignmentsProps {
 export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date())
@@ -30,14 +28,12 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
     )
   }
 
-  // Get current date for comparisons
   const today = new Date(currentTime)
   today.setHours(0, 0, 0, 0)
 
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
-  // Helper function to get time left until start
   const getTimeLeftUntilStart = (startDateTime: Date) => {
     const diffMs = startDateTime.getTime() - currentTime.getTime()
 
@@ -52,7 +48,6 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
     return { hours: diffHours, minutes: diffMinutes, seconds: diffSeconds, isPast: false }
   }
 
-  // Helper function to format time left string
   const formatTimeLeft = (hours: number, minutes: number, seconds: number) => {
     if (hours > 0) {
       return `${hours}h ${minutes}m ${seconds}s`
@@ -73,24 +68,38 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
 
       <div className="space-y-3">
         {assignments.map((assignment) => {
+          const timezone = assignment.site.timezone || 'UTC'
           const startDate = new Date(assignment.duty.start_datetime)
           const startDateOnly = new Date(startDate)
           startDateOnly.setHours(0, 0, 0, 0)
 
           const endDate = new Date(assignment.duty.end_datetime)
-          const startTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          const endTime = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-          // Compare dates for label
+          // Format times using site timezone
+          const startTime = startDate.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: timezone
+          })
+          const endTime = endDate.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: timezone
+          })
+
           const isToday = startDateOnly.getTime() === today.getTime()
           const isTomorrow = startDateOnly.getTime() === tomorrow.getTime()
 
-          // Get time left until start (updates every second)
           const timeLeft = getTimeLeftUntilStart(startDate)
 
-          let dateLabel = format(startDate, "EEEE, MMM d")
-          if (isToday) dateLabel = `Today, ${format(startDate, "MMM d")}`
-          if (isTomorrow) dateLabel = `Tomorrow, ${format(startDate, "MMM d")}`
+          let dateLabel = startDate.toLocaleDateString([], {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric',
+            timeZone: timezone
+          })
+          if (isToday) dateLabel = `Today, ${startDate.toLocaleDateString([], { month: 'short', day: 'numeric', timeZone: timezone })}`
+          if (isTomorrow) dateLabel = `Tomorrow, ${startDate.toLocaleDateString([], { month: 'short', day: 'numeric', timeZone: timezone })}`
 
           return (
             <div
@@ -136,59 +145,51 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-600">
-                          {assignment.duty.required_hours} hours
-                        </span>
+                        <Globe className="h-3.5 w-3.5 text-gray-400" />
+                        <span className="text-xs text-gray-500">{timezone}</span>
                       </div>
                     </div>
 
                     {/* Location Details */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400">Post:</span>
-                      <span className="text-xs text-gray-700">{assignment?.location?.title}</span>
-                    </div>
+                    {assignment.location && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-gray-400">Post:</span>
+                        <span className="text-xs text-gray-700">{assignment.location.title}</span>
+                      </div>
+                    )}
 
                     {/* Countdown Timer */}
                     {!timeLeft.isPast && (
                       <div className="pt-2">
-                        <div className={`
-                          inline-flex items-center gap-2 rounded-full px-3 py-1.5
-                          ${timeLeft.hours === 0 && timeLeft.minutes < 60
+                        <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 ${
+                          timeLeft.hours === 0 && timeLeft.minutes < 60
                             ? 'bg-red-50 animate-pulse'
                             : timeLeft.hours === 0
                               ? 'bg-orange-50'
                               : 'bg-amber-50'
-                          }
-                        `}>
-                          <Hourglass className={`
-                            h-3.5 w-3.5
-                            ${timeLeft.hours === 0 && timeLeft.minutes < 60
+                        }`}>
+                          <Hourglass className={`h-3.5 w-3.5 ${
+                            timeLeft.hours === 0 && timeLeft.minutes < 60
                               ? 'text-red-600'
                               : timeLeft.hours === 0
                                 ? 'text-orange-600'
                                 : 'text-amber-600'
-                            }
-                          `} />
-                          <span className={`
-                            text-xs font-mono font-medium
-                            ${timeLeft.hours === 0 && timeLeft.minutes < 60
+                          }`} />
+                          <span className={`text-xs font-mono font-medium ${
+                            timeLeft.hours === 0 && timeLeft.minutes < 60
                               ? 'text-red-700'
                               : timeLeft.hours === 0
                                 ? 'text-orange-700'
                                 : 'text-amber-700'
-                            }
-                          `}>
-                            {timeLeft.hours > 0 && `${timeLeft.hours}h `}
-                            {timeLeft.minutes > 0 && `${timeLeft.minutes}m `}
-                            {timeLeft.seconds}s
+                          }`}>
+                            {formatTimeLeft(timeLeft.hours, timeLeft.minutes, timeLeft.seconds)}
                           </span>
                           <span className="text-xs text-gray-500">until shift starts</span>
                         </div>
                       </div>
                     )}
 
-                    {/* If shift has started but not ended - show in progress */}
+                    {/* Shift in progress */}
                     {timeLeft.isPast && new Date(assignment.duty.end_datetime) > currentTime && (
                       <div className="pt-2">
                         <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5">
@@ -201,7 +202,6 @@ export function UpcomingAssignments({ assignments }: UpcomingAssignmentsProps) {
                     )}
                   </div>
 
-                  {/* Arrow indicator */}
                   <ChevronRight className="h-5 w-5 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#6b0015]" />
                 </div>
               </div>

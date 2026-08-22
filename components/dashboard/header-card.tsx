@@ -2,7 +2,7 @@
 'use client';
 
 import { DashboardGuard } from "@/app/types/dashboard"
-import { Bell, Menu, Wifi, BatteryFull, MapPin, Power, Circle, Activity } from "lucide-react"
+import { MapPin, Activity, Power, Wifi, BatteryFull, Circle, Globe } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
@@ -32,13 +32,20 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null)
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Get user's timezone
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  // Format time with user's timezone
   const formattedTime = new Date(currentTime).toLocaleString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hour12: true,
+    timeZone: userTimezone,
+    timeZoneName: 'short'
   })
 
-  // Restore tracking state on component mount - NO AUTOMATIC LOCATION UPDATE
+  // Restore tracking state on component mount
   useEffect(() => {
     const initTracking = async () => {
       const savedState = localStorage.getItem('guard_tracking_active');
@@ -46,21 +53,16 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
         setIsOnline(true);
         await dispatch(restoreTracking()).unwrap();
 
-        // Restart heartbeat interval if not running
         if (!heartbeatIntervalRef.current) {
           heartbeatIntervalRef.current = setInterval(() => {
             dispatch(sendHeartbeat());
-          }, 120000); // 2 minutes
+          }, 120000);
         }
-
-        // ✅ REMOVED: No automatic location update here
-        // Location should only be updated when user clicks the button
       }
     };
 
     initTracking();
 
-    // Cleanup on unmount
     return () => {
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
@@ -73,32 +75,33 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
     setIsOnline(isTracking);
   }, [isTracking]);
 
-  // Start location tracking (only heartbeat, no automatic location updates)
+  // Start location tracking
   const handleStartTracking = useCallback(async () => {
     try {
       await dispatch(startLiveTracking()).unwrap();
       await dispatch(updateLiveLocation()).unwrap();
       setIsOnline(true);
 
-      // Start background heartbeat (every 2 minutes)
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
       heartbeatIntervalRef.current = setInterval(() => {
         dispatch(sendHeartbeat());
-      }, 120000); // 2 minutes
+      }, 120000);
 
       SweetAlertService.success(
         'Online Mode Active',
-        'Heartbeat is now being sent every 2 minutes. Use "Update Location" button to share your location.',
+        'Heartbeat is now being sent every 2 minutes.',
         { timer: 3000 }
       );
+      return true;
     } catch (error) {
       SweetAlertService.error(
         'Failed to Start',
         'Unable to start heartbeat. Please try again.',
         { timer: 3000 }
       );
+      return false;
     }
   }, [dispatch]);
 
@@ -126,17 +129,20 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
           'You are now offline. No heartbeat or location updates are being sent.',
           { timer: 3000 }
         );
+        return true;
       } catch (error) {
         SweetAlertService.error(
           'Failed to Go Offline',
           'Unable to stop tracking. Please try again.',
           { timer: 3000 }
         );
+        return false;
       }
     }
+    return false;
   }, [dispatch]);
 
-  // Manual location update (ONLY when user clicks button)
+  // Manual location update
   const handleManualUpdate = useCallback(async () => {
     if (!isOnline) {
       SweetAlertService.warning(
@@ -144,7 +150,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
         'Please go online first using the "Go Online" button.',
         { timer: 2000 }
       );
-      return;
+      return false;
     }
 
     try {
@@ -155,12 +161,14 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
         'Your current location has been sent to the control room.',
         { timer: 1500 }
       );
+      return true;
     } catch (error) {
       SweetAlertService.error(
         'Update Failed',
         'Unable to update location. Please check your GPS and try again.',
         { timer: 2000 }
       );
+      return false;
     }
   }, [dispatch, isOnline]);
 
@@ -171,7 +179,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
     }
   }, [currentLocation]);
 
-  // Get status color and text
+  // Get status display
   const getStatusDisplay = () => {
     if (isOnline && locationStatus === 'online') {
       return { color: 'text-green-400', bg: 'bg-green-500/20', text: 'Online', pulse: true };
@@ -189,10 +197,11 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
       {/* Decorative Wave */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.06),transparent_45%)]" />
 
-      {/* Status Bar with Live Location Status */}
-      {/* <div className="relative z-10 flex items-center justify-between text-xs">
+      {/* Status Bar with Time and Timezone */}
+      <div className="relative z-10 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span>{formattedTime}</span>
+          <Globe className="h-3 w-3 text-white/60" />
+          <span className="font-mono text-white/80">{formattedTime}</span>
           <div className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 ${status.bg}`}>
             {status.pulse && (
               <div className="relative">
@@ -204,9 +213,9 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
         </div>
         <div className="flex items-center gap-1">
           <Wifi className={`h-3 w-3 ${isOnline ? 'text-green-400' : 'text-gray-400'}`} />
-          <BatteryFull className="h-3 w-3" />
+          <BatteryFull className="h-3 w-3 text-gray-400" />
         </div>
-      </div> */}
+      </div>
 
       {/* User Row */}
       <div className="relative z-10 mt-5 flex items-center justify-between sm:mt-6">
@@ -221,13 +230,10 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
             />
             {isOnline && (
               <span className="absolute bottom-0 right-0 h-3 w-3">
-                {/* Outer expanding rings */}
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full border-2 border-green-400 bg-transparent" style={{ animationDuration: '2s' }} />
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full border-2 border-green-400 bg-transparent" style={{ animationDuration: '2s', animationDelay: '0.7s' }} />
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full border-2 border-green-300 bg-transparent" style={{ animationDuration: '2s', animationDelay: '1.4s' }} />
-                {/* Inner pulsing glow */}
                 <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-green-400 opacity-50" />
-                {/* Core dot */}
                 <span className="relative inline-flex h-full w-full rounded-full bg-green-500 ring-2 ring-white shadow-md" />
               </span>
             )}
@@ -241,7 +247,7 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
                 : '✅ Verified account'}
             </p>
             <p className="text-[10px] text-white/60 sm:text-xs">
-              {guard.guard_code}
+              {guard.guard_code} • {guard.guard_type?.name || 'No Type'}
             </p>
           </div>
         </div>
@@ -249,17 +255,17 @@ export function HeaderCard({ guard, currentTime }: HeaderCardProps) {
 
       {/* Live Location Controls */}
       <div className="relative z-10 mt-4">
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-white/5 p-2">
+        <div className="flex flex-col gap-2 rounded-lg bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <MapPin className={`h-4 w-4 ${isOnline ? 'text-green-400' : 'text-gray-400'}`} />
             <span className="text-[10px] opacity-70">
               {isOnline && currentLocation
-                ? `📍 Last location: ${parseFloat(currentLocation.latitude).toFixed(4)}, ${parseFloat(currentLocation.longitude).toFixed(4)}`
+                ? `📍 ${parseFloat(currentLocation.latitude).toFixed(4)}, ${parseFloat(currentLocation.longitude).toFixed(4)}`
                 : 'Location sharing off'}
             </span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {!isOnline ? (
               <button
                 onClick={handleStartTracking}

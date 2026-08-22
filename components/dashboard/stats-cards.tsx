@@ -1,13 +1,14 @@
 // components/dashboard/stats-cards.tsx
 import { DashboardStats } from "@/app/types/dashboard"
-import { 
-  CalendarCheck, 
-  MessageCircle, 
-  AlertTriangle, 
+import {
+  CalendarCheck,
+  MessageCircle,
+  AlertTriangle,
   Calendar,
   CheckCircle,
   Briefcase,
-  TrendingUp
+  TrendingUp,
+  Users
 } from "lucide-react"
 
 interface StatsCardsProps {
@@ -60,7 +61,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       color: "bg-emerald-500",
     },
     {
-      icon: Calendar,
+      icon: Users,
       label: "Upcoming Shifts",
       value: stats.upcoming_shifts_count,
       color: "bg-orange-500",

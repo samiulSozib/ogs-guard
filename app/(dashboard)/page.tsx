@@ -14,8 +14,10 @@ import { useAppSelector } from "@/hooks/useAppSelector"
 import { fetchDashboardData } from "@/store/slices/dashboardSlice"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { TaskList } from "@/components/dashboard/task-list"
-import { ActiveMission } from "@/components/dashboard/active-missions"
-import { UpcomingAssignments } from "@/components/dashboard/upcommint-assignment"
+import { ActiveMission } from '@/components/dashboard/active-missions'
+import { RecentIncidents } from '@/components/dashboard/recent-incidents'
+import { UpcomingAssignments } from '@/components/dashboard/upcommint-assignment'
+
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
@@ -59,7 +61,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { guard, current_assignment, shift_status, tasks, stats, upcoming_assignments } = dashboardData
+  const { guard, current_assignment, shift_status, tasks, stats, upcoming_assignments, recent_incidents } = dashboardData
 
   return (
     <SidebarProvider
@@ -75,20 +77,19 @@ export default function DashboardPage() {
         <SiteHeader />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-24 pt-4 sm:px-6 lg:pb-6 lg:px-8">
           {/* Header Card with Guard Info */}
-          <HeaderCard guard={guard} currentTime={dashboardData.current_time} />
+          <HeaderCard guard={guard} currentTime={dashboardData.current_time_utc} />
 
+          {/* Shift Control */}
+          <ShiftControl
+            shiftStatus={shift_status}
+            guardId={guard.id}
+            currentAssignmentId={current_assignment?.id}
+            currentAssignmentStatus={current_assignment?.status}
+            lastAction={current_assignment?.last_action}
+          />
 
-           {/* Shift Control */}
-              <ShiftControl
-                shiftStatus={shift_status}
-                guardId={guard.id}
-                currentAssignmentId={current_assignment?.id}
-                currentAssignmentStatus={current_assignment?.status}
-                lastAction={current_assignment?.last_action}
-              />
-
-              {/* Active Mission */}
-              {current_assignment && <ActiveMission assignment={current_assignment} />}
+          {/* Active Mission */}
+          {current_assignment && <ActiveMission assignment={current_assignment} />}
 
           {/* Stats Cards */}
           <StatsCards stats={stats} />
@@ -96,20 +97,21 @@ export default function DashboardPage() {
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Main Content */}
             <div className="space-y-6 lg:col-span-2">
-             
+              {/* Recent Incidents */}
+              {recent_incidents && recent_incidents.length > 0 && (
+                <RecentIncidents incidents={recent_incidents} />
+              )}
 
-              
-
-
-              {dashboardData.upcoming_assignments && dashboardData.upcoming_assignments.length > 0 && (
-                <UpcomingAssignments assignments={dashboardData.upcoming_assignments} />
+              {/* Upcoming Assignments */}
+              {upcoming_assignments && upcoming_assignments.length > 0 && (
+                <UpcomingAssignments assignments={upcoming_assignments} />
               )}
             </div>
 
             {/* Tasks Sidebar */}
             <aside className="space-y-4">
               <h2 className="text-sm font-semibold uppercase text-muted-foreground">
-                Today Tasks ({tasks.length})
+                Today's Tasks ({tasks.length})
               </h2>
               <TaskList
                 tasks={tasks}

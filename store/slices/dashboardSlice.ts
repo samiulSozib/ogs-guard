@@ -37,7 +37,7 @@ export const fetchDashboardData = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await dashboardService.getDashboardData();
-      // Extract the body from the API response
+      // The response body contains the dashboard data directly
       return response;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch dashboard data";
@@ -52,7 +52,6 @@ export const fetchShiftStatus = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await dashboardService.getShiftStatus();
-      // Extract the shift_status from the response body
       return response.shift_status;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch shift status";
@@ -67,7 +66,6 @@ export const fetchDashboardStats = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await dashboardService.getDashboardStats();
-      // Extract the stats from the response body
       return response.stats;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch dashboard stats";
@@ -130,7 +128,6 @@ const dashboardSlice = createSlice({
       .addCase(fetchShiftStatus.fulfilled, (state, action: PayloadAction<DashboardShiftStatus>) => {
         state.isLoadingShiftStatus = false;
         state.shiftStatus = action.payload;
-        // Also update in dashboardData if it exists
         if (state.dashboardData) {
           state.dashboardData.shift_status = action.payload;
         }
@@ -148,7 +145,6 @@ const dashboardSlice = createSlice({
       .addCase(fetchDashboardStats.fulfilled, (state, action: PayloadAction<DashboardStats>) => {
         state.isLoadingStats = false;
         state.stats = action.payload;
-        // Also update in dashboardData if it exists
         if (state.dashboardData) {
           state.dashboardData.stats = action.payload;
         }

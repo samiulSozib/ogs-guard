@@ -1,7 +1,7 @@
 // components/dashboard/shift-control.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Power,
   Coffee,
@@ -11,8 +11,7 @@ import {
   Calendar,
   Loader2,
   Navigation,
-  Battery,
-  Wifi,
+  Globe,
 } from "lucide-react"
 import { ActionButton } from "./action-button"
 import SweetAlertService from "@/lib/sweetAlert"
@@ -21,6 +20,7 @@ import { fetchShiftStatus } from "@/store/slices/dashboardSlice"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
 import { DashboardShiftStatus, LastAction } from "@/app/types/dashboard"
+import { sendHeartbeat, startLiveTracking } from '@/store/slices/guardLiveLocationSlice'
 
 interface ShiftControlProps {
   shiftStatus: DashboardShiftStatus
@@ -54,17 +54,19 @@ export function ShiftControl({
 }: ShiftControlProps) {
   const dispatch = useAppDispatch()
   const { isLoading } = useAppSelector((state) => state.dutyAssignmentReport)
+  const { isTracking } = useAppSelector((state) => state.guardLiveLocation)
   const [actionType, setActionType] = useState<string | null>(null)
   const [location, setLocation] = useState<LocationData | null>(null)
   const [isGettingLocation, setIsGettingLocation] = useState(false)
+  const [isProcessingAction, setIsProcessingAction] = useState(false)
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfoData>({
     battery_level: 0,
     network_strength: "unknown",
     device_id: ""
   })
-  
-  // Local state for lastAction to update dynamically
+
   const [lastAction, setLastAction] = useState<LastAction | null>(initialLastAction || null)
+  const locationResolveRef = useRef<((value: boolean) => void) | null>(null)
 
   // Update local state when prop changes
   useEffect(() => {
@@ -119,11 +121,12 @@ export function ShiftControl({
     setDeviceInfo(prev => ({ ...prev, device_id: deviceId }))
   }
 
-  const getLocation = async (): Promise<boolean> => {
+  // Get location with promise
+  const getLocation = (): Promise<LocationData | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         SweetAlertService.error("Error", "Geolocation is not supported by your browser")
-        resolve(false)
+        resolve(null)
         return
       }
 
@@ -149,15 +152,16 @@ export function ShiftControl({
             console.error("Reverse geocoding failed:", error)
           }
 
-          setLocation({
+          const locationData = {
             latitude: lat,
             longitude: lng,
             accuracy: accuracyValue,
             address: addressText
-          })
+          }
 
+          setLocation(locationData)
           setIsGettingLocation(false)
-          resolve(true)
+          resolve(locationData)
         },
         (error) => {
           setIsGettingLocation(false)
@@ -170,7 +174,7 @@ export function ShiftControl({
             errorMessage = "Location request timed out."
           }
           SweetAlertService.error("Location Error", errorMessage)
-          resolve(false)
+          resolve(null)
         },
         {
           enableHighAccuracy: true,
@@ -183,7 +187,6 @@ export function ShiftControl({
 
   // Determine available actions based on last_action
   const getAvailableActions = () => {
-    // If no last_action, only check_in is available
     if (!lastAction) {
       return {
         canCheckIn: true,
@@ -193,7 +196,6 @@ export function ShiftControl({
       }
     }
 
-    // If last_action.action is 'break', only check_in is available (must resume duty first)
     if (lastAction.action === 'break') {
       return {
         canCheckIn: true,
@@ -203,7 +205,6 @@ export function ShiftControl({
       }
     }
 
-    // If last_action.action is 'check_in', make break and check_out available
     if (lastAction.action === 'check_in') {
       return {
         canCheckIn: false,
@@ -213,7 +214,6 @@ export function ShiftControl({
       }
     }
 
-    // If last_action.action is 'check_out', disable all
     if (lastAction.action === 'check_out') {
       return {
         canCheckIn: false,
@@ -223,7 +223,6 @@ export function ShiftControl({
       }
     }
 
-    // Default fallback
     return {
       canCheckIn: true,
       canBreak: false,
@@ -234,16 +233,14 @@ export function ShiftControl({
 
   const availableActions = getAvailableActions()
 
-  // Determine which button should bounce
   const shouldBounceCheckIn = availableActions.canCheckIn
   const shouldBounceBreak = availableActions.canBreak
   const shouldBounceCheckOut = availableActions.canCheckOut
 
-  // Update last action after successful action
   const updateLastAction = (action: string, time?: string) => {
     const now = new Date()
     const formattedTime = time || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    
+
     setLastAction({
       action: action,
       time: formattedTime,
@@ -251,9 +248,17 @@ export function ShiftControl({
     })
   }
 
-  const handleClockIn = async () => {
-    if (!availableActions.canCheckIn) {
-      SweetAlertService.warning("Not Available", "You cannot clock in at this time")
+  // Main action handler - handles online status and location in one click
+  const performShiftAction = async (action: 'check_in' | 'break' | 'check_out', actionLabel: string) => {
+    // Check if action is available
+    const actionMap = {
+      check_in: availableActions.canCheckIn,
+      break: availableActions.canBreak,
+      check_out: availableActions.canCheckOut
+    }
+
+    if (!actionMap[action]) {
+      SweetAlertService.warning("Not Available", `You cannot ${actionLabel} at this time`)
       return
     }
 
@@ -262,34 +267,94 @@ export function ShiftControl({
       return
     }
 
-    setActionType('check_in')
+    setActionType(action)
+    setIsProcessingAction(true)
 
     try {
-      const locationSuccess = await getLocation()
-      if (!locationSuccess || !location) {
+      // Step 1: Check if online, if not - go online first
+      let isOnline = isTracking
+      if (!isOnline) {
+        SweetAlertService.loading('Going Online...', 'Please wait while we connect...')
+
+        // Dispatch start tracking
+        await dispatch(startLiveTracking()).unwrap()
+        isOnline = true
+
+        // Start heartbeat
+        const heartbeatInterval = setInterval(() => {
+          dispatch(sendHeartbeat())
+        }, 120000)
+
+        // Store interval reference for cleanup (optional)
+        localStorage.setItem('heartbeat_interval', String(heartbeatInterval))
+
+        SweetAlertService.close()
+      }
+
+      // Step 2: Get location (this will trigger GPS)
+      SweetAlertService.loading('Getting Location...', 'Please wait while we get your current position...')
+
+      const locationData = await getLocation()
+
+      if (!locationData) {
+        SweetAlertService.close()
+        setIsProcessingAction(false)
         setActionType(null)
         return
       }
 
+      SweetAlertService.close()
+
+      // Step 3: Confirm action with user
+      const confirmMessages = {
+        check_in: {
+          title: "Clock In",
+          text: "Are you ready to start your shift?",
+          confirmText: "Yes, Clock In"
+        },
+        break: {
+          title: "Take Break",
+          text: "Are you sure you want to take a break?",
+          confirmText: "Yes, Take Break"
+        },
+        check_out: {
+          title: "Clock Out",
+          text: "Are you sure you want to clock out? This will end your shift.",
+          confirmText: "Yes, Clock Out"
+        }
+      }
+
+      const msg = confirmMessages[action]
       const result = await SweetAlertService.confirm(
-        "Clock In",
-        "Are you ready to start your shift?",
-        "Yes, Clock In"
+        msg.title,
+        msg.text,
+        msg.confirmText,
+        "Cancel"
       )
 
       if (!result.isConfirmed) {
+        setIsProcessingAction(false)
         setActionType(null)
         return
+      }
+
+      // Step 4: Perform the action
+      SweetAlertService.loading('Processing...', `Please wait while we ${actionLabel}...`)
+
+      const remarksMap = {
+        check_in: "Starting shift",
+        break: "Taking break",
+        check_out: "Ending shift"
       }
 
       await dispatch(logShiftAction({
         guard_assignment_id: currentAssignmentId,
-        action: 'check_in',
-        latitude: location.latitude,
-        longitude: location.longitude,
-        accuracy: location.accuracy,
-        location_address: location.address,
-        remarks: "Starting shift",
+        action: action,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        accuracy: locationData.accuracy,
+        location_address: locationData.address,
+        remarks: remarksMap[action],
         metadata: {
           battery_level: deviceInfo.battery_level,
           network_strength: deviceInfo.network_strength,
@@ -298,150 +363,37 @@ export function ShiftControl({
         }
       })).unwrap()
 
-      updateLastAction('check_in')
-      
-      SweetAlertService.success("Success", "You have successfully clocked in")
+      SweetAlertService.close()
+
+      // Step 5: Update local state
+      updateLastAction(action)
+
+      const successMessages = {
+        check_in: "You have successfully clocked in",
+        break: "Break started successfully",
+        check_out: "You have successfully clocked out"
+      }
+
+      SweetAlertService.success("Success", successMessages[action])
       dispatch(fetchShiftStatus())
-      
+
       if (onActionComplete) {
         onActionComplete()
       }
 
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to clock in. Please try again."
+      SweetAlertService.close()
+      const errorMessage = error instanceof Error ? error.message : `Failed to ${actionLabel}. Please try again.`
       SweetAlertService.error("Error", errorMessage)
     } finally {
+      setIsProcessingAction(false)
       setActionType(null)
     }
   }
 
-  const handleBreak = async () => {
-    if (!availableActions.canBreak) {
-      SweetAlertService.warning("Not Available", "Break action not available at this time")
-      return
-    }
-
-    if (!currentAssignmentId) {
-      SweetAlertService.error("Error", "No active assignment found")
-      return
-    }
-
-    setActionType('break')
-
-    try {
-      const locationSuccess = await getLocation()
-      if (!locationSuccess || !location) {
-        setActionType(null)
-        return
-      }
-
-      const result = await SweetAlertService.confirm(
-        "Break",
-        "Are you sure you want to take a break?",
-        "Yes, Take Break"
-      )
-
-      if (!result.isConfirmed) {
-        setActionType(null)
-        return
-      }
-
-      await dispatch(logShiftAction({
-        guard_assignment_id: currentAssignmentId,
-        action: 'break',
-        latitude: location.latitude,
-        longitude: location.longitude,
-        accuracy: location.accuracy,
-        location_address: location.address,
-        remarks: "Taking break",
-        metadata: {
-          battery_level: deviceInfo.battery_level,
-          network_strength: deviceInfo.network_strength,
-          device_id: deviceInfo.device_id,
-          timestamp: new Date().toISOString(),
-        }
-      })).unwrap()
-
-      updateLastAction('break')
-      
-      SweetAlertService.success("Success", "Break started successfully")
-      dispatch(fetchShiftStatus())
-      
-      if (onActionComplete) {
-        onActionComplete()
-      }
-
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to take break. Please try again."
-      SweetAlertService.error("Error", errorMessage)
-    } finally {
-      setActionType(null)
-    }
-  }
-
-  const handleClockOut = async () => {
-    if (!availableActions.canCheckOut) {
-      SweetAlertService.warning("Not Available", "You cannot clock out at this time")
-      return
-    }
-
-    if (!currentAssignmentId) {
-      SweetAlertService.error("Error", "No active assignment found")
-      return
-    }
-
-    setActionType('check_out')
-
-    try {
-      const locationSuccess = await getLocation()
-      if (!locationSuccess || !location) {
-        setActionType(null)
-        return
-      }
-
-      const result = await SweetAlertService.confirm(
-        "Clock Out",
-        "Are you sure you want to clock out? This will end your shift.",
-        "Yes, Clock Out"
-      )
-
-      if (!result.isConfirmed) {
-        setActionType(null)
-        return
-      }
-
-      await dispatch(logShiftAction({
-        guard_assignment_id: currentAssignmentId,
-        action: 'check_out',
-        latitude: location.latitude,
-        longitude: location.longitude,
-        accuracy: location.accuracy,
-        location_address: location.address,
-        remarks: "Ending shift",
-        metadata: {
-          battery_level: deviceInfo.battery_level,
-          network_strength: deviceInfo.network_strength,
-          device_id: deviceInfo.device_id,
-          timestamp: new Date().toISOString(),
-        }
-      })).unwrap()
-
-      updateLastAction('check_out')
-      
-      SweetAlertService.success("Success", "You have successfully clocked out")
-      dispatch(fetchShiftStatus())
-      
-      if (onActionComplete) {
-        onActionComplete()
-      }
-
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to clock out. Please try again."
-      SweetAlertService.error("Error", errorMessage)
-    } finally {
-      setActionType(null)
-    }
-  }
+  const handleClockIn = () => performShiftAction('check_in', 'clock in')
+  const handleBreak = () => performShiftAction('break', 'take break')
+  const handleClockOut = () => performShiftAction('check_out', 'clock out')
 
   const handleIncident = () => {
     window.location.href = "/incidents"
@@ -455,9 +407,9 @@ export function ShiftControl({
     window.location.href = "/leave-requests"
   }
 
-  const isLoadingCheckIn = isLoading && actionType === 'check_in'
-  const isLoadingBreak = isLoading && actionType === 'break'
-  const isLoadingCheckOut = isLoading && actionType === 'check_out'
+  const isLoadingCheckIn = (isLoading || isProcessingAction) && actionType === 'check_in'
+  const isLoadingBreak = (isLoading || isProcessingAction) && actionType === 'break'
+  const isLoadingCheckOut = (isLoading || isProcessingAction) && actionType === 'check_out'
 
   const getLastActionText = () => {
     if (!lastAction) return "No action yet"
@@ -466,9 +418,18 @@ export function ShiftControl({
 
   const isShiftCompleted = lastAction?.action === 'check_out'
 
+  // Get timezone display
+  const timezoneDisplay = shiftStatus?.site_timezone || 'Unknown'
+
   return (
     <div>
-      <h2 className="mb-3 font-semibold">Shift Control</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold">Shift Control</h2>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Globe className="h-3 w-3" />
+          <span>{timezoneDisplay}</span>
+        </div>
+      </div>
 
       {/* Last Action Banner */}
       <div className="mb-4 rounded-lg border p-3 bg-gray-50 dark:bg-gray-800">
@@ -516,23 +477,31 @@ export function ShiftControl({
         </div>
       )}
 
+      {/* Processing Status */}
+      {isProcessingAction && (
+        <div className="mb-4 rounded-lg bg-purple-50 p-3 text-xs text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Processing your request...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-6">
         {/* Primary Actions Row */}
         <div className="grid grid-cols-3 gap-3 md:gap-4">
-          {/* Clock In Button */}
           <ActionButton
             icon={isLoadingCheckIn ? Loader2 : Power}
-            label={isLoadingCheckIn ? "Checking In..." : "Check In"}
+            label={isLoadingCheckIn ? "Processing..." : "Check In"}
             size="large"
             variant="checkin"
             active={availableActions.canCheckIn}
             bounce={shouldBounceCheckIn}
             isAssignmentAssigned={availableActions.canCheckIn}
             onClick={handleClockIn}
-            disabled={isLoadingCheckIn || isShiftCompleted}
+            disabled={isLoadingCheckIn || isShiftCompleted || isProcessingAction}
           />
 
-          {/* Break Button */}
           <ActionButton
             icon={isLoadingBreak ? Loader2 : Coffee}
             label={isLoadingBreak ? "Processing..." : "Break"}
@@ -542,20 +511,19 @@ export function ShiftControl({
             bounce={shouldBounceBreak}
             isAssignmentAssigned={availableActions.canBreak}
             onClick={handleBreak}
-            disabled={isLoadingBreak || isShiftCompleted}
+            disabled={isLoadingBreak || isShiftCompleted || isProcessingAction}
           />
 
-          {/* Clock Out Button */}
           <ActionButton
             icon={isLoadingCheckOut ? Loader2 : Clock}
-            label={isLoadingCheckOut ? "Checking Out..." : "Check Out"}
+            label={isLoadingCheckOut ? "Processing..." : "Check Out"}
             size="large"
             variant="checkout"
             active={availableActions.canCheckOut}
             bounce={shouldBounceCheckOut}
             isAssignmentAssigned={availableActions.canCheckOut}
             onClick={handleClockOut}
-            disabled={isLoadingCheckOut || isShiftCompleted}
+            disabled={isLoadingCheckOut || isShiftCompleted || isProcessingAction}
           />
         </div>
 

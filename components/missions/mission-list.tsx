@@ -102,7 +102,7 @@ export function MissionList({ missions, pagination, onPageChange }: MissionProps
           // Use siteDetails if available, otherwise fallback to mission fields
           const siteDetails = mission.siteDetails;
           const dutyDetails = mission.dutyDetails;
-          
+
           return (
             <div key={mission.id} className="border border-gray-300 rounded-lg overflow-hidden bg-white">
               <Accordion type="single" collapsible className="w-full">
@@ -126,8 +126,8 @@ export function MissionList({ missions, pagination, onPageChange }: MissionProps
                     <div className="space-y-4">
                       {/* Google Map */}
                       <div className="h-75 w-full rounded-2xl overflow-hidden border border-gray-200">
-                        <SiteMap 
-                          latitude={siteDetails?.latitude || mission.latitude} 
+                        <SiteMap
+                          latitude={siteDetails?.latitude || mission.latitude}
                           longitude={siteDetails?.longitude || mission.longitude}
                           siteName={siteDetails?.site_name || mission.siteName}
                         />
@@ -244,9 +244,9 @@ export function MissionList({ missions, pagination, onPageChange }: MissionProps
                               <div key={index} className="flex justify-between items-center bg-gray-100 rounded p-3">
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                                    <img 
-                                      src={guard.avatar} 
-                                      alt={guard.name} 
+                                    <img
+                                      src={guard.avatar}
+                                      alt={guard.name}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = "/img/avt.png";
@@ -273,13 +273,13 @@ export function MissionList({ missions, pagination, onPageChange }: MissionProps
                         {/* Action Buttons - Commented out as per your request */}
                         {/* <div className="flex flex-col gap-2 w-full mt-4">
                           <div className="flex gap-2 w-full">
-                            <Button 
+                            <Button
                               className="flex-1 bg-[#B5A28A] text-white font-semibold hover:bg-[#B5A28A]/90"
                             >
                               <FileText className="w-4 h-4 mr-2" />
                               Reports ({mission.reportCount || 0})
                             </Button>
-                            <Button 
+                            <Button
                               className="flex-1 bg-[#5F0015] text-white font-semibold hover:bg-[#5F0015]/90"
                             >
                               <ImageIcon className="w-4 h-4 mr-2" />
@@ -361,8 +361,8 @@ export function MissionList({ missions, pagination, onPageChange }: MissionProps
                     key={i + 1}
                     variant={pagination.current_page === i + 1 ? "default" : "outline"}
                     className={`px-4 ${
-                      pagination.current_page === i + 1 
-                        ? 'bg-[#5F0015] text-white hover:bg-[#5F0015]/90' 
+                      pagination.current_page === i + 1
+                        ? 'bg-[#5F0015] text-white hover:bg-[#5F0015]/90'
                         : ''
                     }`}
                     onClick={() => onPageChange?.(i + 1)}
