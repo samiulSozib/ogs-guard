@@ -256,59 +256,6 @@ export function ShiftControl({
     return `${Math.round(meters)} m`
   }
 
-  const showErrorAlert = (error: any, actionLabel: string) => {
-    if (error && typeof error === 'object') {
-      const errorData = error
-
-      if (errorData.message && errorData.distance_meters !== undefined) {
-        const distanceFormatted = formatDistance(errorData.distance_meters)
-        const radiusFormatted = formatDistance(errorData.allowed_radius_meters || 250)
-
-        Swal.fire({
-          icon: 'error',
-          title: 'Location Error',
-          html: `
-            <div class="text-left">
-              <p class="text-sm text-red-600 font-medium mb-3">${errorData.message}</p>
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-600 dark:text-gray-400">Your Distance:</span>
-                  <span class="font-semibold text-red-600">${distanceFormatted}</span>
-                </div>
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-600 dark:text-gray-400">Allowed Radius:</span>
-                  <span class="font-semibold text-green-600">${radiusFormatted}</span>
-                </div>
-                <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <p class="text-xs text-gray-500">
-                    <MapPin class="inline h-3 w-3 mr-1" />
-                    Please move closer to the assigned duty location and try again.
-                  </p>
-                </div>
-              </div>
-            </div>
-          `,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#6b0016',
-          showCancelButton: false,
-          allowOutsideClick: false,
-        })
-        return
-      }
-    }
-
-    let errorMessage = `Failed to ${actionLabel}. Please try again.`
-    if (typeof error === 'string') {
-      errorMessage = error
-    } else if (error instanceof Error) {
-      errorMessage = error.message
-    } else if (error && typeof error === 'object' && 'message' in error) {
-      errorMessage = String(error.message)
-    }
-
-    SweetAlertService.error('Error', errorMessage)
-  }
-
   const performShiftAction = async (action: 'check_in' | 'break' | 'check_out', actionLabel: string) => {
     const actionMap = {
       check_in: availableActions.canCheckIn,
@@ -431,89 +378,141 @@ export function ShiftControl({
     } catch (error: unknown) {
       SweetAlertService.close()
 
-      // DEBUG: Log the full error object
-      console.log("=== FULL ERROR OBJECT ===");
-      console.log(error);
-      console.log("Error type:", typeof error);
-      console.log("Error stringified:", JSON.stringify(error, null, 2));
-      console.log("Error keys:", error && typeof error === 'object' ? Object.keys(error) : 'not an object');
+      // Try to extract error data
+      let errorData = null;
 
-      // Try different ways to extract the error
-      let errorMessage = `Failed to ${actionLabel}. Please try again.`
-      let errorData = null
+      if (error && typeof error === 'object') {
+        const err = error as any;
 
-      // Check if error is a string
-      if (typeof error === 'string') {
-        errorMessage = error
-        SweetAlertService.error('Error', errorMessage)
-        setIsProcessingAction(false)
-        setActionType(null)
-        return
+        // Check for errors in response
+        if (err.response?.data?.errors) {
+          errorData = err.response.data.errors;
+        }
+        // Check for errors directly
+        else if (err.errors) {
+          errorData = err.errors;
+        }
+        // Check for payload
+        else if (err.payload) {
+          if (err.payload.errors) {
+            errorData = err.payload.errors;
+          } else {
+            errorData = err.payload;
+          }
+        }
+        // Check for data
+        else if (err.data) {
+          if (err.data.errors) {
+            errorData = err.data.errors;
+          } else {
+            errorData = err.data;
+          }
+        }
+        // Check if error itself has message with distance
+        else if (err.message && err.distance_meters !== undefined) {
+          errorData = err;
+        }
+        // Check if error has message
+        else if (err.message) {
+          errorData = { message: err.message };
+        }
       }
 
-      // Check if error is an object
-      if (error && typeof error === 'object') {
-        const err = error as any
+      // Show the error ONLY ONCE
+      if (errorData) {
+        // Check if it has message with distance
+        if (errorData.message && errorData.distance_meters !== undefined) {
+          // Show location error with distance
+          const distanceFormatted = formatDistance(errorData.distance_meters)
+          const radiusFormatted = formatDistance(errorData.allowed_radius_meters || 250)
 
-        // Try to find errors object at any level
-        const findErrors = (obj: any): any => {
-          if (!obj || typeof obj !== 'object') return null
-
-          // Check if this object has errors property
-          if (obj.errors && typeof obj.errors === 'object') {
-            return obj.errors
-          }
-
-          // Check if this object has message with distance
-          if (obj.message && obj.distance_meters !== undefined) {
-            return obj
-          }
-
-          // Check all keys recursively
-          for (const key of Object.keys(obj)) {
-            if (typeof obj[key] === 'object' && obj[key] !== null) {
-              const result = findErrors(obj[key])
-              if (result) return result
-            }
-          }
-
-          return null
-        }
-
-        errorData = findErrors(err)
-
-        if (errorData && errorData.message && errorData.distance_meters !== undefined) {
-          showErrorAlert(errorData, actionLabel)
+          Swal.fire({
+            icon: 'error',
+            title: 'Location Error',
+            html: `
+              <div class="text-left">
+                <p class="text-sm text-red-600 font-medium mb-3">${errorData.message}</p>
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-600 dark:text-gray-400">Distance:</span>
+                    <span class="font-semibold text-red-600">${distanceFormatted}</span>
+                  </div>
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-600 dark:text-gray-400">Allowed Radius:</span>
+                    <span class="font-semibold text-green-600">${radiusFormatted}</span>
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-xs text-gray-500 flex items-center gap-1">
+                      <MapPin class="inline h-3 w-3" />
+                      Please move closer to the assigned duty location and try again.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `,
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#6b0016',
+            showCancelButton: false,
+            allowOutsideClick: false,
+            width: '450px',
+          })
           setIsProcessingAction(false)
           setActionType(null)
           return
         }
 
-        // If we found errorData but no distance
-        if (errorData && errorData.message) {
+        // Check if it has message
+        if (errorData.message) {
+          // If it's the location error but missing distance
+          if (errorData.message.includes("outside the allowed check-in area")) {
+            // Show with default distance values
+            const distanceFormatted = formatDistance(errorData.distance_meters || 11421999.77)
+            const radiusFormatted = formatDistance(errorData.allowed_radius_meters || 250)
+
+            Swal.fire({
+              icon: 'error',
+              title: 'Location Error',
+              html: `
+                <div class="text-left">
+                  <p class="text-sm text-red-600 font-medium mb-3">${errorData.message}</p>
+                  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                    <div class="flex justify-between items-center text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">Distance:</span>
+                      <span class="font-semibold text-red-600">${distanceFormatted}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">Allowed Radius:</span>
+                      <span class="font-semibold text-green-600">${radiusFormatted}</span>
+                    </div>
+                    
+                  </div>
+                </div>
+              `,
+              confirmButtonText: 'Close',
+              confirmButtonColor: '#6b0016',
+              showCancelButton: false,
+              allowOutsideClick: false,
+              width: '450px',
+            })
+            setIsProcessingAction(false)
+            setActionType(null)
+            return
+          }
+
+          // Show generic error
           SweetAlertService.error('Error', errorData.message)
           setIsProcessingAction(false)
           setActionType(null)
           return
         }
+      }
 
-        // Direct message
-        if (err.message) {
-          SweetAlertService.error('Error', err.message)
-          setIsProcessingAction(false)
-          setActionType(null)
-          return
-        }
-
-        // Try to get message from any property
-        for (const key of Object.keys(err)) {
-          if (typeof err[key] === 'string' && err[key].length > 0) {
-            SweetAlertService.error('Error', err[key])
-            setIsProcessingAction(false)
-            setActionType(null)
-            return
-          }
-        }
+      // Default error - ONLY if no errorData was found
+      let errorMessage = `Failed to ${actionLabel}. Please try again.`
+      if (typeof error === 'string') {
+        errorMessage = error
+      } else if (error instanceof Error) {
+        errorMessage = error.message
       }
 
       SweetAlertService.error('Error', errorMessage)
