@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 'use client'
 
 import { useEffect } from "react"
@@ -79,13 +78,17 @@ export default function DashboardPage() {
           {/* Header Card with Guard Info */}
           <HeaderCard guard={guard} currentTime={dashboardData.current_time_utc} />
 
-          {/* Shift Control */}
+          {/* Shift Control - Fixed props */}
           <ShiftControl
-            shiftStatus={shift_status}
             guardId={guard.id}
             currentAssignmentId={current_assignment?.id}
             currentAssignmentStatus={current_assignment?.status}
-            lastAction={current_assignment?.last_action}
+            lastAction={current_assignment?.last_action || null}
+            siteTimezone={shift_status?.site_timezone || "UTC"}
+            onActionComplete={() => {
+              // Refresh dashboard data after action
+              dispatch(fetchDashboardData())
+            }}
           />
 
           {/* Active Mission */}
