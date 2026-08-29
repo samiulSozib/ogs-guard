@@ -147,7 +147,7 @@ const guardNavItems = {
       url: "/",
       icon: Home,
     },
-    
+
     {
       title: "Missions",
       url: "/missions",
@@ -171,14 +171,14 @@ const guardNavItems = {
     },
   ],
   navSecondary: [
+    // {
+    //   title: "Help",
+    //   url: "/help",
+    //   icon: MessageCircleQuestion,
+    // },
     {
-      title: "Help",
-      url: "/help",
-      icon: MessageCircleQuestion,
-    },
-    {
-      title: "Support",
-      url: "/support",
+      title: "Contact",
+      url: "/contact",
       icon: MessageCircleQuestion,
     },
   ],
