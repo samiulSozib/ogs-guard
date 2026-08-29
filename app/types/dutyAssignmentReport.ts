@@ -1,6 +1,4 @@
-// app/types/shift.types.ts
-
-export type ShiftAction = 'check_in' | 'check_out' | 'break' | 'break';
+export type ShiftAction = 'check_in' | 'check_out' | 'break';
 
 export interface ShiftLogActionRequest {
   guard_assignment_id: number;
@@ -32,4 +30,23 @@ export interface ShiftLogActionResponse {
   status: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ApiErrorResponse {
+  message: string;
+  distance_meters?: number;
+  allowed_radius_meters?: number;
+  [key: string]: unknown;
+}
+
+export interface ShiftStatus {
+  is_active: boolean;
+  last_action: {
+    action: string;
+    time: string;
+    location: string;
+  } | null;
+  site_timezone: string;
+  current_assignment_id?: number;
+  current_assignment_status?: string;
 }

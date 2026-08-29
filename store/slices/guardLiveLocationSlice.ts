@@ -1,11 +1,11 @@
 // store/slices/guardLiveLocation.slice.ts
 
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { guardLiveLocationService } from "@/service/guardLiveLocation.service";
 import {
-  LiveLocationData,
-  GuardLiveLocationState
+  GuardLiveLocationState,
+  LiveLocationData
 } from "@/app/types/guardLiveLocation";
+import { guardLiveLocationService } from "@/service/guardLiveLocation.service";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // Define BatteryManager interface
 interface BatteryManager extends EventTarget {

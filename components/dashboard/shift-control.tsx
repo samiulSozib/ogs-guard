@@ -1,7 +1,6 @@
-// components/dashboard/shift-control.tsx
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
   Power,
   Coffee,
@@ -12,24 +11,16 @@ import {
   Loader2,
   Navigation,
   Globe,
+  MapPin,
 } from "lucide-react"
 import { ActionButton } from "./action-button"
 import SweetAlertService from "@/lib/sweetAlert"
 import { logShiftAction } from "@/store/slices/dutyAssignmentReportSlice"
-import { fetchShiftStatus } from "@/store/slices/dashboardSlice"
 import { useAppDispatch } from "@/hooks/useAppDispatch"
 import { useAppSelector } from "@/hooks/useAppSelector"
-import { DashboardShiftStatus, LastAction } from "@/app/types/dashboard"
 import { sendHeartbeat, startLiveTracking } from '@/store/slices/guardLiveLocationSlice'
-
-interface ShiftControlProps {
-  shiftStatus: DashboardShiftStatus
-  guardId: number
-  currentAssignmentId?: number,
-  currentAssignmentStatus?: string
-  lastAction?: LastAction | null
-  onActionComplete?: () => void
-}
+import Swal from 'sweetalert2'
+import { ShiftLogActionRequest } from "@/app/types/dutyAssignmentReport"
 
 interface LocationData {
   latitude: number
@@ -44,12 +35,27 @@ interface DeviceInfoData {
   device_id: string
 }
 
+interface LastAction {
+  action: string
+  time: string
+  location: string
+}
+
+interface ShiftControlProps {
+  guardId: number
+  currentAssignmentId?: number
+  currentAssignmentStatus?: string
+  lastAction?: LastAction | null
+  siteTimezone?: string
+  onActionComplete?: () => void
+}
+
 export function ShiftControl({
-  shiftStatus,
   guardId,
   currentAssignmentId,
   currentAssignmentStatus,
   lastAction: initialLastAction,
+  siteTimezone = "UTC",
   onActionComplete
 }: ShiftControlProps) {
   const dispatch = useAppDispatch()
@@ -66,14 +72,11 @@ export function ShiftControl({
   })
 
   const [lastAction, setLastAction] = useState<LastAction | null>(initialLastAction || null)
-  const locationResolveRef = useRef<((value: boolean) => void) | null>(null)
 
-  // Update local state when prop changes
   useEffect(() => {
     setLastAction(initialLastAction || null)
   }, [initialLastAction])
 
-  // Get device info on mount
   useEffect(() => {
     getDeviceInfo()
   }, [])
@@ -121,7 +124,6 @@ export function ShiftControl({
     setDeviceInfo(prev => ({ ...prev, device_id: deviceId }))
   }
 
-  // Get location with promise
   const getLocation = (): Promise<LocationData | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
@@ -185,7 +187,6 @@ export function ShiftControl({
     })
   }
 
-  // Determine available actions based on last_action
   const getAvailableActions = () => {
     if (!lastAction) {
       return {
@@ -248,9 +249,67 @@ export function ShiftControl({
     })
   }
 
-  // Main action handler - handles online status and location in one click
+  const formatDistance = (meters: number): string => {
+    if (meters >= 1000) {
+      return `${(meters / 1000).toFixed(2)} km`
+    }
+    return `${Math.round(meters)} m`
+  }
+
+  const showErrorAlert = (error: any, actionLabel: string) => {
+    if (error && typeof error === 'object') {
+      const errorData = error
+
+      if (errorData.message && errorData.distance_meters !== undefined) {
+        const distanceFormatted = formatDistance(errorData.distance_meters)
+        const radiusFormatted = formatDistance(errorData.allowed_radius_meters || 250)
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Location Error',
+          html: `
+            <div class="text-left">
+              <p class="text-sm text-red-600 font-medium mb-3">${errorData.message}</p>
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">Your Distance:</span>
+                  <span class="font-semibold text-red-600">${distanceFormatted}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">Allowed Radius:</span>
+                  <span class="font-semibold text-green-600">${radiusFormatted}</span>
+                </div>
+                <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <p class="text-xs text-gray-500">
+                    <MapPin class="inline h-3 w-3 mr-1" />
+                    Please move closer to the assigned duty location and try again.
+                  </p>
+                </div>
+              </div>
+            </div>
+          `,
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#6b0016',
+          showCancelButton: false,
+          allowOutsideClick: false,
+        })
+        return
+      }
+    }
+
+    let errorMessage = `Failed to ${actionLabel}. Please try again.`
+    if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String(error.message)
+    }
+
+    SweetAlertService.error('Error', errorMessage)
+  }
+
   const performShiftAction = async (action: 'check_in' | 'break' | 'check_out', actionLabel: string) => {
-    // Check if action is available
     const actionMap = {
       check_in: availableActions.canCheckIn,
       break: availableActions.canBreak,
@@ -271,29 +330,19 @@ export function ShiftControl({
     setIsProcessingAction(true)
 
     try {
-      // Step 1: Check if online, if not - go online first
       let isOnline = isTracking
       if (!isOnline) {
         SweetAlertService.loading('Going Online...', 'Please wait while we connect...')
-
-        // Dispatch start tracking
         await dispatch(startLiveTracking()).unwrap()
         isOnline = true
-
-        // Start heartbeat
         const heartbeatInterval = setInterval(() => {
           dispatch(sendHeartbeat())
         }, 120000)
-
-        // Store interval reference for cleanup (optional)
         localStorage.setItem('heartbeat_interval', String(heartbeatInterval))
-
         SweetAlertService.close()
       }
 
-      // Step 2: Get location (this will trigger GPS)
       SweetAlertService.loading('Getting Location...', 'Please wait while we get your current position...')
-
       const locationData = await getLocation()
 
       if (!locationData) {
@@ -305,7 +354,6 @@ export function ShiftControl({
 
       SweetAlertService.close()
 
-      // Step 3: Confirm action with user
       const confirmMessages = {
         check_in: {
           title: "Clock In",
@@ -338,7 +386,6 @@ export function ShiftControl({
         return
       }
 
-      // Step 4: Perform the action
       SweetAlertService.loading('Processing...', `Please wait while we ${actionLabel}...`)
 
       const remarksMap = {
@@ -347,7 +394,7 @@ export function ShiftControl({
         check_out: "Ending shift"
       }
 
-      await dispatch(logShiftAction({
+      const payload: ShiftLogActionRequest = {
         guard_assignment_id: currentAssignmentId,
         action: action,
         latitude: locationData.latitude,
@@ -361,11 +408,12 @@ export function ShiftControl({
           device_id: deviceInfo.device_id,
           timestamp: new Date().toISOString(),
         }
-      })).unwrap()
+      }
+
+      await dispatch(logShiftAction(payload)).unwrap()
 
       SweetAlertService.close()
 
-      // Step 5: Update local state
       updateLastAction(action)
 
       const successMessages = {
@@ -375,7 +423,6 @@ export function ShiftControl({
       }
 
       SweetAlertService.success("Success", successMessages[action])
-      dispatch(fetchShiftStatus())
 
       if (onActionComplete) {
         onActionComplete()
@@ -383,8 +430,93 @@ export function ShiftControl({
 
     } catch (error: unknown) {
       SweetAlertService.close()
-      const errorMessage = error instanceof Error ? error.message : `Failed to ${actionLabel}. Please try again.`
-      SweetAlertService.error("Error", errorMessage)
+
+      // DEBUG: Log the full error object
+      console.log("=== FULL ERROR OBJECT ===");
+      console.log(error);
+      console.log("Error type:", typeof error);
+      console.log("Error stringified:", JSON.stringify(error, null, 2));
+      console.log("Error keys:", error && typeof error === 'object' ? Object.keys(error) : 'not an object');
+
+      // Try different ways to extract the error
+      let errorMessage = `Failed to ${actionLabel}. Please try again.`
+      let errorData = null
+
+      // Check if error is a string
+      if (typeof error === 'string') {
+        errorMessage = error
+        SweetAlertService.error('Error', errorMessage)
+        setIsProcessingAction(false)
+        setActionType(null)
+        return
+      }
+
+      // Check if error is an object
+      if (error && typeof error === 'object') {
+        const err = error as any
+
+        // Try to find errors object at any level
+        const findErrors = (obj: any): any => {
+          if (!obj || typeof obj !== 'object') return null
+
+          // Check if this object has errors property
+          if (obj.errors && typeof obj.errors === 'object') {
+            return obj.errors
+          }
+
+          // Check if this object has message with distance
+          if (obj.message && obj.distance_meters !== undefined) {
+            return obj
+          }
+
+          // Check all keys recursively
+          for (const key of Object.keys(obj)) {
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+              const result = findErrors(obj[key])
+              if (result) return result
+            }
+          }
+
+          return null
+        }
+
+        errorData = findErrors(err)
+
+        if (errorData && errorData.message && errorData.distance_meters !== undefined) {
+          showErrorAlert(errorData, actionLabel)
+          setIsProcessingAction(false)
+          setActionType(null)
+          return
+        }
+
+        // If we found errorData but no distance
+        if (errorData && errorData.message) {
+          SweetAlertService.error('Error', errorData.message)
+          setIsProcessingAction(false)
+          setActionType(null)
+          return
+        }
+
+        // Direct message
+        if (err.message) {
+          SweetAlertService.error('Error', err.message)
+          setIsProcessingAction(false)
+          setActionType(null)
+          return
+        }
+
+        // Try to get message from any property
+        for (const key of Object.keys(err)) {
+          if (typeof err[key] === 'string' && err[key].length > 0) {
+            SweetAlertService.error('Error', err[key])
+            setIsProcessingAction(false)
+            setActionType(null)
+            return
+          }
+        }
+      }
+
+      SweetAlertService.error('Error', errorMessage)
     } finally {
       setIsProcessingAction(false)
       setActionType(null)
@@ -418,20 +550,16 @@ export function ShiftControl({
 
   const isShiftCompleted = lastAction?.action === 'check_out'
 
-  // Get timezone display
-  const timezoneDisplay = shiftStatus?.site_timezone || 'Unknown'
-
   return (
-    <div>
+    <div className="w-full max-w-4xl mx-auto p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold">Shift Control</h2>
+        <h2 className="font-semibold text-lg">Shift Control</h2>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Globe className="h-3 w-3" />
-          <span>{timezoneDisplay}</span>
+          <span>{siteTimezone}</span>
         </div>
       </div>
 
-      {/* Last Action Banner */}
       <div className="mb-4 rounded-lg border p-3 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Last Action:</span>
@@ -467,7 +595,6 @@ export function ShiftControl({
         )}
       </div>
 
-      {/* Location Status */}
       {isGettingLocation && (
         <div className="mb-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
           <div className="flex items-center gap-2">
@@ -477,7 +604,6 @@ export function ShiftControl({
         </div>
       )}
 
-      {/* Processing Status */}
       {isProcessingAction && (
         <div className="mb-4 rounded-lg bg-purple-50 p-3 text-xs text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
           <div className="flex items-center gap-2">
@@ -488,7 +614,6 @@ export function ShiftControl({
       )}
 
       <div className="flex flex-col gap-6">
-        {/* Primary Actions Row */}
         <div className="grid grid-cols-3 gap-3 md:gap-4">
           <ActionButton
             icon={isLoadingCheckIn ? Loader2 : Power}
@@ -527,30 +652,31 @@ export function ShiftControl({
           />
         </div>
 
-        {/* Secondary Actions Row */}
         <div className="grid grid-cols-3 gap-3 md:gap-4">
           <ActionButton
             icon={AlertCircle}
             label="Incident"
+            size="medium"
             variant="default"
             onClick={handleIncident}
           />
           <ActionButton
             icon={Target}
             label="Missions"
+            size="medium"
             variant="default"
             onClick={handleMissions}
           />
           <ActionButton
             icon={Calendar}
             label="Leave"
+            size="medium"
             variant="default"
             onClick={handleLeave}
           />
         </div>
       </div>
 
-      {/* Helper text based on last_action */}
       {!lastAction && (
         <div className="mt-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 animate-pulse">
           <strong>📋 No active shift:</strong> Click the <strong className="font-bold">Check In</strong> button to start your shift
