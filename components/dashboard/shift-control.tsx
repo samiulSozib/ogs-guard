@@ -65,6 +65,7 @@ export function ShiftControl({
   const [location, setLocation] = useState<LocationData | null>(null)
   const [isGettingLocation, setIsGettingLocation] = useState(false)
   const [isProcessingAction, setIsProcessingAction] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfoData>({
     battery_level: 0,
     network_strength: "unknown",
@@ -126,13 +127,21 @@ export function ShiftControl({
 
   const getLocation = (): Promise<LocationData | null> => {
     return new Promise((resolve) => {
+      // Check if geolocation is supported
       if (!navigator.geolocation) {
         SweetAlertService.error("Error", "Geolocation is not supported by your browser")
         resolve(null)
         return
       }
 
+      // Check if geolocation is available (not in secure context, etc.)
+      if (!navigator.permissions) {
+        // Fallback: try to get location anyway
+        console.warn("Permissions API not available, attempting location access...")
+      }
+
       setIsGettingLocation(true)
+      setLocationError(null)
 
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -163,25 +172,44 @@ export function ShiftControl({
 
           setLocation(locationData)
           setIsGettingLocation(false)
+          setLocationError(null)
           resolve(locationData)
         },
         (error) => {
           setIsGettingLocation(false)
+
           let errorMessage = "Unable to get your location"
-          if (error.code === error.PERMISSION_DENIED) {
-            errorMessage = "Location permission denied. Please enable location access."
-          } else if (error.code === error.POSITION_UNAVAILABLE) {
-            errorMessage = "Location information is unavailable."
-          } else if (error.code === error.TIMEOUT) {
-            errorMessage = "Location request timed out."
+          const errorTitle = "Location Error"
+
+          // Handle different error codes
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location permission denied. Please enable location access in your browser settings."
+              break
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information is unavailable. Please ensure GPS is enabled."
+              break
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out. Please try again."
+              break
+            default:
+              // Check for the CoreLocation error
+              if (error.message && error.message.includes('kCLErrorLocationUnknown')) {
+                errorMessage = "Unable to determine your location. Please ensure GPS is enabled and you have a clear view of the sky."
+              } else {
+                errorMessage = error.message || "Unable to get your location"
+              }
+              break
           }
-          SweetAlertService.error("Location Error", errorMessage)
+
+          setLocationError(errorMessage)
+          SweetAlertService.error(errorTitle, errorMessage)
           resolve(null)
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+          timeout: 15000, // Increased timeout
+          maximumAge: 5000, // Allow some cached location
         }
       )
     })
@@ -290,10 +318,55 @@ export function ShiftControl({
       }
 
       SweetAlertService.loading('Getting Location...', 'Please wait while we get your current position...')
-      const locationData = await getLocation()
+
+      // Add a retry mechanism for location
+      let locationData: LocationData | null = null
+      let retryCount = 0
+      const maxRetries = 2
+
+      while (retryCount <= maxRetries && !locationData) {
+        if (retryCount > 0) {
+          SweetAlertService.loading('Getting Location (Retry)...', `Attempt ${retryCount + 1} of ${maxRetries + 1}`)
+        }
+        locationData = await getLocation()
+        retryCount++
+
+        if (!locationData && retryCount <= maxRetries) {
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+      }
 
       if (!locationData) {
         SweetAlertService.close()
+        // Show a more helpful error message
+        await Swal.fire({
+          icon: 'error',
+          title: 'Location Unavailable',
+          html: `
+            <div class="text-left">
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                We couldn't get your current location. Please try the following:
+              </p>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc list-inside">
+                <li>Make sure GPS is enabled on your device</li>
+                <li>Move to an area with better GPS signal</li>
+                <li>Check if location permissions are granted</li>
+                <li>Refresh the page and try again</li>
+              </ul>
+            </div>
+          `,
+          confirmButtonText: 'Try Again',
+          confirmButtonColor: '#3b82f6',
+          showCancelButton: true,
+          cancelButtonText: 'Cancel',
+          cancelButtonColor: '#6b7280',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Retry the action
+            performShiftAction(action, actionLabel)
+          }
+        })
         setIsProcessingAction(false)
         setActionType(null)
         return
@@ -484,7 +557,7 @@ export function ShiftControl({
                       <span class="text-gray-600 dark:text-gray-400">Allowed Radius:</span>
                       <span class="font-semibold text-green-600">${radiusFormatted}</span>
                     </div>
-                    
+
                   </div>
                 </div>
               `,
@@ -600,6 +673,21 @@ export function ShiftControl({
             <Navigation className="h-4 w-4 animate-spin" />
             <span>Getting your location...</span>
           </div>
+        </div>
+      )}
+
+      {locationError && (
+        <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <span>{locationError}</span>
+          </div>
+          <button
+            className="mt-1 text-xs underline hover:no-underline"
+            onClick={() => setLocationError(null)}
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
